@@ -7,10 +7,10 @@ pub fn NavBar() -> impl IntoView {
         <aside class="sidebar">
             <div class="brand">"clock it"</div>
             <nav class="nav">
-                <NavLink href="/" label="Home" icon="🏠"/>
+                <NavLink href="/home" label="Home" icon="🏠"/>
+                <NavLink href="/timetable" label="Timetable" icon="📅"/>
+                <NavLink href="/statistics" label="Statistics" icon="📊"/>
                 <NavLink href="/about" label="About" icon="ℹ️"/>
-             	<NavLink href="/timetable" label="Timetable" icon="📅"/>
-                <NavLink href="/stats" label="Statistics" icon="📊"/>
             </nav>
             <div class="sidebar-footer">
                 <button class="signout">"Sign Out"</button>
