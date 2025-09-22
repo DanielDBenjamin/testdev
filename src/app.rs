@@ -1,9 +1,12 @@
 use leptos::prelude::*;
+use leptos_router::StaticSegment;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::{
     components::{Route, Router, Routes},
-    StaticSegment,
+    hooks::use_location,
 };
+use crate::routes::{Error, HomePage, Login, Statistics, Timetable, About, Register, ClassesPage, NewClass, NewModule};
+use crate::components::{NavBar, TopBar};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -25,37 +28,56 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 
 #[component]
 pub fn App() -> impl IntoView {
-    // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
-
     view! {
-        // injects a stylesheet into the document <head>
-        // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/clock-it.css"/>
-
-        // sets the document title
-        <Title text="Welcome to Leptos"/>
-
-        // content for this welcome page
+        <Title text="Clock-It"/>
         <Router>
-            <main>
-                <Routes fallback=|| "Page not found.".into_view()>
-                    <Route path=StaticSegment("") view=HomePage/>
-                </Routes>
-            </main>
+            <AppShell/>
         </Router>
     }
 }
 
-/// Renders the home page of your application.
 #[component]
-fn HomePage() -> impl IntoView {
-    // Creates a reactive value to update the button
-    let count = RwSignal::new(0);
-    let on_click = move |_| *count.write() += 1;
-
+fn AppShell() -> impl IntoView {
+    let location = use_location();
+    let show_sidebar = Signal::derive(move || {
+        let path = location.pathname.get();
+        path.starts_with("/home")
+            || path.starts_with("/timetable")
+            || path.starts_with("/statistics")
+            || path.starts_with("/about")
+            || path.starts_with("/classes")
+            || path.starts_with("/modules")
+    });
+    let show_footer = Signal::derive(move || show_sidebar.get());
+    let shell_class = Signal::derive(move || {
+        if show_sidebar.get() { "app-shell".to_string() } else { "app-shell no-sidebar".to_string() }
+    });
     view! {
-        <h1>"Welcome to Leptos!"</h1>
-        <button on:click=on_click>"Click Me: " {count}</button>
+    <div class=move || shell_class.get()>
+            <Show when=move || show_sidebar.get()>
+                <TopBar/>
+                <NavBar/>
+            </Show>
+            <main class="content">
+                <Routes fallback=|| view! { <Error/> }>
+                    <Route path=StaticSegment("") view=Login/>
+                    <Route path=StaticSegment("register") view=Register/>
+                    <Route path=StaticSegment("home") view=HomePage/>
+                    <Route path=StaticSegment("classes") view=ClassesPage/>
+                    <Route path=(StaticSegment("classes"), StaticSegment("new")) view=NewClass/>
+                    <Route path=(StaticSegment("modules"), StaticSegment("new")) view=NewModule/>
+                    <Route path=StaticSegment("timetable") view=Timetable/>
+                    <Route path=StaticSegment("statistics") view=Statistics/>
+                    <Route path=StaticSegment("about") view=About/>
+                </Routes>
+            </main>
+            <Show when=move || show_footer.get()>
+                <footer class="footer">
+                    <small>"Built with Leptos"</small>
+                </footer>
+            </Show>
+        </div>
     }
 }
