@@ -5,7 +5,6 @@ use leptos_router::hooks::use_location;
 pub fn NavBar() -> impl IntoView {
     view! {
         <aside class="sidebar">
-            <div class="brand">"clock it"</div>
             <nav class="nav">
                 <NavLink href="/home" label="Home" icon="🏠"/>
                 <NavLink href="/timetable" label="Timetable" icon="📅"/>

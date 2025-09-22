@@ -5,8 +5,8 @@ use leptos_router::{
     components::{Route, Router, Routes},
     hooks::use_location,
 };
-use crate::routes::{Error, HomePage, Login, Statistics, Timetable, About, Register};
-use crate::components::NavBar;
+use crate::routes::{Error, HomePage, Login, Statistics, Timetable, About, Register, ClassesPage, NewClass, NewModule};
+use crate::components::{NavBar, TopBar};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -47,6 +47,8 @@ fn AppShell() -> impl IntoView {
             || path.starts_with("/timetable")
             || path.starts_with("/statistics")
             || path.starts_with("/about")
+            || path.starts_with("/classes")
+            || path.starts_with("/modules")
     });
     let show_footer = Signal::derive(move || show_sidebar.get());
     let shell_class = Signal::derive(move || {
@@ -55,13 +57,17 @@ fn AppShell() -> impl IntoView {
     view! {
     <div class=move || shell_class.get()>
             <Show when=move || show_sidebar.get()>
-            <NavBar/>    
+                <TopBar/>
+                <NavBar/>
             </Show>
             <main class="content">
                 <Routes fallback=|| view! { <Error/> }>
                     <Route path=StaticSegment("") view=Login/>
                     <Route path=StaticSegment("register") view=Register/>
                     <Route path=StaticSegment("home") view=HomePage/>
+                    <Route path=StaticSegment("classes") view=ClassesPage/>
+                    <Route path=(StaticSegment("classes"), StaticSegment("new")) view=NewClass/>
+                    <Route path=(StaticSegment("modules"), StaticSegment("new")) view=NewModule/>
                     <Route path=StaticSegment("timetable") view=Timetable/>
                     <Route path=StaticSegment("statistics") view=Statistics/>
                     <Route path=StaticSegment("about") view=About/>
