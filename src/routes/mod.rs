@@ -4,6 +4,7 @@ pub mod timetable;
 pub mod statistics;
 pub mod login;
 pub mod register;
+pub mod error;
 
 pub use about::About;
 
@@ -12,3 +13,4 @@ pub use timetable::Timetable;
 pub use statistics::Statistics;
 pub use login::Login;
 pub use register::Register;
+pub use error::Error;

@@ -1,18 +1,13 @@
-use crate::components::NavBar;
-use crate::routes::About;
-use crate::routes::HomePage;  
-use crate::routes::Statistics;
-use crate::routes::Timetable;
-use crate::routes::Login;
-use crate::routes::Register;
 use leptos::prelude::*;
+use leptos_router::StaticSegment;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::{
     components::{Route, Router, Routes},
-    StaticSegment,
     hooks::use_location,
 };
-use std::thread::Scope;
+use crate::routes::{Error, HomePage, Login, Statistics, Timetable, About, Register};
+use crate::components::NavBar;
+
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
         <!DOCTYPE html>
@@ -48,26 +43,35 @@ fn AppShell() -> impl IntoView {
     let location = use_location();
     let show_sidebar = Signal::derive(move || {
         let path = location.pathname.get();
-        !(path == "/login" || path == "/register")
+        path.starts_with("/home")
+            || path.starts_with("/timetable")
+            || path.starts_with("/statistics")
+            || path.starts_with("/about")
+    });
+    let show_footer = Signal::derive(move || show_sidebar.get());
+    let shell_class = Signal::derive(move || {
+        if show_sidebar.get() { "app-shell".to_string() } else { "app-shell no-sidebar".to_string() }
     });
     view! {
-        <div class="app-shell">
+    <div class=move || shell_class.get()>
             <Show when=move || show_sidebar.get()>
-                <NavBar/>
+            <NavBar/>    
             </Show>
             <main class="content">
-                <Routes fallback=|| "Page not found.".into_view()>
+                <Routes fallback=|| view! { <Error/> }>
+                    <Route path=StaticSegment("") view=Login/>
+                    <Route path=StaticSegment("register") view=Register/>
                     <Route path=StaticSegment("home") view=HomePage/>
                     <Route path=StaticSegment("timetable") view=Timetable/>
                     <Route path=StaticSegment("statistics") view=Statistics/>
                     <Route path=StaticSegment("about") view=About/>
-                    <Route path=StaticSegment("") view=Login/>
-                    <Route path=StaticSegment("register") view=Register/>
                 </Routes>
             </main>
-            <footer class="footer">
-                <small>"Built with Leptos"</small>
-            </footer>
+            <Show when=move || show_footer.get()>
+                <footer class="footer">
+                    <small>"Built with Leptos"</small>
+                </footer>
+            </Show>
         </div>
     }
 }
