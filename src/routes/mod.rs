@@ -8,6 +8,7 @@ pub mod error;
 pub mod classes;
 pub mod new_class;
 pub mod new_module;
+pub mod profile;
 
 pub use about::About;
 
@@ -20,3 +21,4 @@ pub use error::Error;
 pub use classes::ClassesPage;
 pub use new_class::NewClass;
 pub use new_module::NewModule;
+pub use profile::Profile;
