@@ -8,6 +8,7 @@ pub mod error;
 pub mod classes;
 pub mod new_class;
 pub mod new_module;
+pub mod auth_functions;
 
 pub use about::About;
 

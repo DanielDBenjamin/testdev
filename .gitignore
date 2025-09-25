@@ -12,3 +12,10 @@ Cargo.lock
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
+
+# Database files
+clock_it.db
+clock_it.db-shm
+clock_it.db-wal
+*.sqlite
+*.sqlite3
