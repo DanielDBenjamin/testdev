@@ -21,3 +21,4 @@ pub use error::Error;
 pub use classes::ClassesPage;
 pub use new_class::NewClass;
 pub use new_module::NewModule;
+pub use profile::Profile;
