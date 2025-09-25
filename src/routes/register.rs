@@ -1,15 +1,9 @@
 use leptos::prelude::*;
-use leptos::server_fn::error::ServerFnError;
 use leptos_router::components::A;
 
-#[server(Register, "/api")]
-async fn register(name: String, email: String, password: String) -> Result<bool, ServerFnError> {
-    if name.trim().is_empty() || email.trim().is_empty() || password.trim().is_empty() {
-        return Err(ServerFnError::new("All fields are required"));
-    }
-    // TODO: create user in DB, hash password, handle uniqueness, etc.
-    Ok(true)
-}
+// Import the server functions and types
+use crate::routes::auth_functions::register_user;
+use crate::types::RegisterData;
 
 #[component]
 pub fn Register() -> impl IntoView {
@@ -18,22 +12,55 @@ pub fn Register() -> impl IntoView {
     let email = RwSignal::new(String::new());
     let password = RwSignal::new(String::new());
     let confirm = RwSignal::new(String::new());
-    let client_error = RwSignal::new(String::new());
-    let role = RwSignal::new("Lecturer");
+    let role = RwSignal::new("Lecturer".to_string());
+    let message = RwSignal::new(String::new());
+    let success = RwSignal::new(false);
 
-    let register_action = Action::new(|(n, e, p): &(String, String, String)| {
-        let (n, e, p) = (n.clone(), e.clone(), p.clone());
-        async move { register(n, e, p).await.ok() }
+    let register_action = Action::new(|data: &RegisterData| {
+        let data = data.clone();
+        async move { register_user(data).await }
     });
 
     let on_submit = move |_| {
-        client_error.set(String::new());
-        if password.get() != confirm.get() {
-            client_error.set("Passwords do not match".into());
-            return;
-        }
-        register_action.dispatch((name.get(), email.get(), password.get()));
+        message.set(String::new());
+        success.set(false);
+        
+        let data = RegisterData {
+            name: name.get(),
+            surname: surname.get(),
+            email: email.get(),
+            password: password.get(),
+            confirm_password: confirm.get(),
+            role: role.get().to_lowercase(),
+        };
+        
+        register_action.dispatch(data);
     };
+
+    // Handle response
+    Effect::new(move |_| {
+        if let Some(result) = register_action.value().get() {
+            match result {
+                Ok(auth_response) => {
+                    message.set(auth_response.message);
+                    success.set(auth_response.success);
+                    
+                    if auth_response.success {
+                        // Clear form on success
+                        name.set(String::new());
+                        surname.set(String::new());
+                        email.set(String::new());
+                        password.set(String::new());
+                        confirm.set(String::new());
+                    }
+                }
+                Err(e) => {
+                    message.set(format!("Error: {}", e));
+                    success.set(false);
+                }
+            }
+        }
+    });
 
     view! {
         <div class="auth-layout">
@@ -45,15 +72,15 @@ pub fn Register() -> impl IntoView {
                 <div class="segmented">
                     <button
                         class=move || if role.get() == "Lecturer" { "seg-btn active" } else { "seg-btn" }
-                        on:click=move |_| role.set("Lecturer")
+                        on:click=move |_| role.set("Lecturer".to_string())
                     >"Lecturer"</button>
                     <button
                         class=move || if role.get() == "Tutor" { "seg-btn active" } else { "seg-btn" }
-                        on:click=move |_| role.set("Tutor")
+                        on:click=move |_| role.set("Tutor".to_string())
                     >"Tutor"</button>
                     <button
                         class=move || if role.get() == "Student" { "seg-btn active" } else { "seg-btn" }
-                        on:click=move |_| role.set("Student")
+                        on:click=move |_| role.set("Student".to_string())
                     >"Student"</button>
                 </div>
 
@@ -93,7 +120,11 @@ pub fn Register() -> impl IntoView {
                         on:click=on_submit
                         disabled=move || register_action.pending().get()
                     >
-                        {move || if register_action.pending().get() { "Creating...".into_view() } else { "Create Account".into_view() }}
+                        {move || if register_action.pending().get() { 
+                            "Creating Account...".into_view() 
+                        } else { 
+                            "Create Account".into_view() 
+                        }}
                     </button>
 
                     <p class="small muted center" style="margin-top:8px;">
@@ -103,12 +134,11 @@ pub fn Register() -> impl IntoView {
                         <A href="#" attr:class="link accent">"Privacy Policy"</A>
                     </p>
 
-                    <Show when=move || !client_error.get().is_empty()>
-                        <p class="error center">{client_error}</p>
-                    </Show>
-
-                    <Show when=move || register_action.value().get().flatten().unwrap_or(false)>
-                        <p class="success center">"Account created (stub). You can now sign in."</p>
+                    // Show messages
+                    <Show when=move || !message.get().is_empty()>
+                        <p class=move || if success.get() { "success center" } else { "error center" }>
+                            {message}
+                        </p>
                     </Show>
 
                     <p class="muted center" style="margin-top:8px;">
