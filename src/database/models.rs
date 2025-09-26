@@ -7,10 +7,12 @@ use sqlx::FromRow;
 #[cfg(feature = "ssr")]
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct User {
+    #[sqlx(rename = "userID")] 
     #[serde(rename = "userID")]
     pub user_id: i64,
     pub name: String,
     pub surname: String,
+    #[sqlx(rename = "emailAddress")]
     #[serde(rename = "emailAddress")]
     pub email_address: String,
     pub password: String,

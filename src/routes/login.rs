@@ -1,26 +1,70 @@
 use leptos::prelude::*;
-use leptos::server_fn::error::ServerFnError;
 use leptos_router::components::A;
-
-#[server(Login, "/api")]
-async fn login(email: String, password: String) -> Result<bool, ServerFnError> {
-    // Placeholder auth check. Replace with real DB/session logic.
-    if email.trim().is_empty() || password.trim().is_empty() {
-        return Err(ServerFnError::new("Email and password are required"));
-    }
-    Ok(true)
-}
+use leptos_router::hooks::use_navigate;
+use crate::routes::auth_functions::login_user;
+use crate::types::LoginData;
 
 #[component]
 pub fn Login() -> impl IntoView {
     let email = RwSignal::new(String::new());
     let password = RwSignal::new(String::new());
-    let role = RwSignal::new("Lecturer");
+    let role = RwSignal::new("Lecturer".to_string());
+    let message = RwSignal::new(String::new());
+    let success = RwSignal::new(false);
 
-    let login_action = Action::new(|(e, p): &(String, String)| {
-        let e = e.clone();
-        let p = p.clone();
-        async move { login(e, p).await.ok() }
+    let navigate = use_navigate();
+
+    let login_action = Action::new(|data: &LoginData| {
+        let data = data.clone();
+        async move { login_user(data).await }
+    });
+
+    let on_submit = move |_| {
+        message.set(String::new());
+        success.set(false);
+        
+        let data = LoginData {
+            email: email.get(),
+            password: password.get(),
+        };
+        
+        login_action.dispatch(data);
+    };
+
+    // Handle login response
+    Effect::new(move |_| {
+        if let Some(result) = login_action.value().get() {
+            match result {
+                Ok(auth_response) => {
+                    message.set(auth_response.message);
+                    success.set(auth_response.success);
+                    
+                    if auth_response.success {
+                        // Successful login - redirect based on role
+                        if let Some(user) = auth_response.user {
+                            match user.role.as_str() {
+                                "lecturer" | "tutor" => {
+                                    navigate("/home", Default::default());
+                                }
+                                "student" => {
+                                    // For now, redirect to home (you'll create student interface later)
+                                    navigate("/home", Default::default());
+                                }
+                                _ => {
+                                    navigate("/home", Default::default());
+                                }
+                            }
+                        } else {
+                            navigate("/home", Default::default());
+                        }
+                    }
+                }
+                Err(e) => {
+                    message.set(format!("Error: {}", e));
+                    success.set(false);
+                }
+            }
+        }
     });
 
     view! {
@@ -33,15 +77,15 @@ pub fn Login() -> impl IntoView {
                 <div class="segmented">
                     <button
                         class=move || if role.get() == "Lecturer" { "seg-btn active" } else { "seg-btn" }
-                        on:click=move |_| role.set("Lecturer")
+                        on:click=move |_| role.set("Lecturer".to_string())
                     >"Lecturer"</button>
                     <button
                         class=move || if role.get() == "Tutor" { "seg-btn active" } else { "seg-btn" }
-                        on:click=move |_| role.set("Tutor")
+                        on:click=move |_| role.set("Tutor".to_string())
                     >"Tutor"</button>
                     <button
                         class=move || if role.get() == "Student" { "seg-btn active" } else { "seg-btn" }
-                        on:click=move |_| role.set("Student")
+                        on:click=move |_| role.set("Student".to_string())
                     >"Student"</button>
                 </div>
 
@@ -64,10 +108,14 @@ pub fn Login() -> impl IntoView {
 
                     <button
                         class="btn btn-accent btn-block"
-                        on:click=move |_| { login_action.dispatch((email.get(), password.get())); }
+                        on:click=on_submit
                         disabled=move || login_action.pending().get()
                     >
-                        {move || if login_action.pending().get() { "Signing in...".into_view() } else { "Sign In".into_view() }}
+                        {move || if login_action.pending().get() { 
+                            "Signing in...".into_view() 
+                        } else { 
+                            "Sign In".into_view() 
+                        }}
                     </button>
 
                     <p class="center" style="margin:10px 0 0;">
@@ -78,8 +126,11 @@ pub fn Login() -> impl IntoView {
                         <A href="/register" attr:class="link accent">"Create account"</A>
                     </p>
 
-                    <Show when=move || login_action.value().get().flatten().unwrap_or(false)>
-                        <p class="success center">"Signed in successfully (stub)."</p>
+                    // Show messages
+                    <Show when=move || !message.get().is_empty()>
+                        <p class=move || if success.get() { "success center" } else { "error center" }>
+                            {message}
+                        </p>
                     </Show>
                 </div>
             </div>
