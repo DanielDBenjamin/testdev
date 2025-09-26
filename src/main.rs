@@ -6,7 +6,8 @@ async fn main() {
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use clock_it::app::*;
-    use clock_it::database::{init_db_pool, test_db_connection, create_tables, test_database_structure};
+    use clock_it::database::{init_db_pool, test_db_connection, run_migrations, test_database_structure};
+
 
     println!("🚀 Starting Clock-It server...");
 
@@ -23,8 +24,8 @@ async fn main() {
             std::process::exit(1);
         }
 
-        if let Err(e) = create_tables(&pool).await {
-            eprintln!("❌ Failed to create database tables: {}", e);
+        if let Err(e) = run_migrations(&pool).await {
+            eprintln!("❌ Failed to run database migrations: {}", e);
             std::process::exit(1);
         }
 
