@@ -1,4 +1,3 @@
-
 #[cfg(feature = "ssr")]
 use crate::database::{init_db_pool, create_user, authenticate_user, CreateUserRequest};
 use crate::types::{RegisterData, LoginData, AuthResponse};
@@ -66,7 +65,6 @@ pub async fn register_user(data: RegisterData) -> Result<AuthResponse, ServerFnE
         surname: data.surname.trim().to_string(),
         email: data.email.trim().to_lowercase(),
         password: data.password,
-        university: "University of Example".to_string(),
         role: data.role,
     };
 

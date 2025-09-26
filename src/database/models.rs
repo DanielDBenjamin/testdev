@@ -7,7 +7,7 @@ use sqlx::FromRow;
 #[cfg(feature = "ssr")]
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct User {
-    #[sqlx(rename = "userID")] 
+    #[sqlx(rename = "userID")]
     #[serde(rename = "userID")]
     pub user_id: i64,
     pub name: String,
@@ -16,7 +16,6 @@ pub struct User {
     #[serde(rename = "emailAddress")]
     pub email_address: String,
     pub password: String,
-    pub university: String,
     pub role: String,
     pub created_at: String,
     pub updated_at: String,
@@ -29,7 +28,6 @@ pub struct CreateUserRequest {
     pub surname: String,
     pub email: String,
     pub password: String,
-    pub university: String,
     pub role: String,
 }
 
@@ -47,7 +45,6 @@ impl From<User> for UserProfile {
             name: user.name,
             surname: user.surname,
             email_address: user.email_address,
-            university: user.university,
             role: user.role,
         }
     }
