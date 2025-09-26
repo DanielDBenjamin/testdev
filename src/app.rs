@@ -32,6 +32,9 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
+    
+    crate::user_context::init_user_context();
+
     view! {
         <Stylesheet id="leptos" href="/pkg/clock-it.css"/>
         <Title text="Clock-It"/>

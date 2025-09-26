@@ -5,7 +5,7 @@ use crate::components::{Calendar, ClassList, Header};
 pub fn Timetable() -> impl IntoView {
     view! {
         <section class="timetable">
-            <Header title="Schedule" subtitle="Review your weekly classes"/>
+            <Header title=move || "Schedule".to_string() subtitle="Review your weekly classes".to_string()/>
             <div class="timetable-grid">
                 <div class="calendar-panel">
                     <Calendar/>
@@ -18,4 +18,3 @@ pub fn Timetable() -> impl IntoView {
         </section>
     }
 }
-

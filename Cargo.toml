@@ -18,11 +18,19 @@ wasm-bindgen = { version = "=0.2.103", optional = true }
 
 # Always available dependencies
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+web-sys = { version = "0.3", features = ["Window", "Storage"] }
+gloo-timers = { version = "0.3", features = ["futures"] }
 
 # Database dependencies - only available when ssr feature is enabled
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid"], optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
 uuid = { version = "1.0", features = ["v4", "serde"], optional = true }
+
+# Session management dependencies
+axum_session = { version = "0.16", optional = true }
+
+
 
 [features]
 hydrate = [
