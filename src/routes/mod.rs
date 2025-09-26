@@ -1,4 +1,5 @@
 pub mod about;
+pub mod profile;
 pub mod home;
 pub mod timetable;
 pub mod statistics;
