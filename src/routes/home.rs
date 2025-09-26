@@ -11,7 +11,7 @@ pub fn HomePage() -> impl IntoView {
     leptos::logging::log!("HomePage mounted");
 
     // Optional reactive debug without web_sys
-    create_effect(move |_| {
+    Effect::new(move |_| {
         leptos::logging::log!("HomePage - current user changed: {:?}", current_user.get());
     });
 
