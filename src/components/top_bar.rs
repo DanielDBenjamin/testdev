@@ -19,10 +19,10 @@ pub fn TopBar() -> impl IntoView {
                 <div class="brand"><A href="/home"><img src="/logo.png" alt="Logo"/></A></div>
             </div>
             <div class="topbar-right">
-                <div class="user-chip">
+                <A href="/lecturer/profile" attr:class="user-chip">
                     <span class="avatar" aria-hidden="true">"👩🏻‍🏫"</span>
                     <span class="name">{user_name}</span>
-                </div>
+                </A>
             </div>
         </header>
     }

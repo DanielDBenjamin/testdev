@@ -10,7 +10,8 @@ pub mod classes;
 pub mod new_class;
 pub mod new_module;
 pub mod auth_functions;
-
+pub mod module_functions;
+pub mod class_functions;
 pub use about::About;
 
 pub use home::HomePage;

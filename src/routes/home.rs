@@ -1,33 +1,18 @@
 use leptos::prelude::*;
-use crate::components::{Header, ModuleCard, Calendar, ClassList, StatTile};
+use crate::components::{Header, Calendar, ClassList, StatTile};
 use crate::user_context::get_current_user;
+use crate::routes::module_functions::get_lecturer_modules_fn;
+use crate::database::modules::ModuleWithStats;
 use leptos_router::components::A;
+use leptos_router::hooks::use_navigate;
 
 #[component]
 pub fn HomePage() -> impl IntoView {
     let current_user = get_current_user();
 
-    // Use leptos::logging::log! which is SSR-safe (prints to server log / console.log in browser)
-    leptos::logging::log!("HomePage mounted");
-
-    // Optional reactive debug without web_sys
-    Effect::new(move |_| {
-        leptos::logging::log!("HomePage - current user changed: {:?}", current_user.get());
-    });
-
-    // Define greeting for BOTH targets; only browser branch touches web_sys.
+    // Define greeting
     let greeting = move || -> String {
         let user = current_user.get();
-
-        // browser-only extra logging (optional)
-        #[cfg(target_arch = "wasm32")]
-        {
-            use wasm_bindgen::JsValue;
-            web_sys::console::log_1(&JsValue::from_str(&format!(
-                "Generating greeting for user: {:?}", user
-            )));
-        }
-
         match user {
             Some(user) => {
                 let title = match user.role.as_str() {
@@ -35,16 +20,57 @@ pub fn HomePage() -> impl IntoView {
                     "tutor" => "Mr./Ms.",
                     _ => "",
                 };
-                format!("Welcome back, {} {} {}", title, user.name, user.surname)
+                format!("Welcome back, {} {}", title, user.surname)
             }
             None => "Welcome back".to_string(),
         }
     };
 
+    // Load modules
+    let modules_resource = Resource::new(
+        move || current_user.get().map(|u| u.email_address.clone()),
+        |email| async move {
+            match email {
+                Some(email) => {
+                    match get_lecturer_modules_fn(email).await {
+                        Ok(response) => {
+                            if response.success {
+                                Some(response.modules)
+                            } else {
+                                leptos::logging::log!("Failed to load modules: {}", response.message);
+                                None
+                            }
+                        }
+                        Err(e) => {
+                            leptos::logging::log!("Error loading modules: {}", e);
+                            None
+                        }
+                    }
+                }
+                None => None,
+            }
+        },
+    );
+
+    // Calculate total stats as signals
+    let total_students = Signal::derive(move || {
+        modules_resource.get().and_then(|modules| {
+            modules.as_ref().map(|m| {
+                m.iter().map(|mod_| mod_.student_count).sum::<i32>()
+            })
+        }).unwrap_or(0).to_string()
+    });
+
+    let total_classes = Signal::derive(move || {
+        modules_resource.get().and_then(|modules| {
+            modules.as_ref().map(|m| {
+                m.iter().map(|mod_| mod_.class_count).sum::<i32>()
+            })
+        }).unwrap_or(0).to_string()
+    });
+
     view! {
         <section class="home">
-            // If Header.title expects a signal/closure, passing `greeting` is fine.
-            // If it expects a String, use `title=greeting()`.
             <Header
                 title=greeting
                 subtitle="Manage your modules and schedule your classes".to_string()
@@ -57,17 +83,42 @@ pub fn HomePage() -> impl IntoView {
                         <A href="/modules/new" attr:class="btn btn-outline btn-small">"+ Add Module"</A>
                     </div>
 
-                    <div class="modules-grid">
-                        <ModuleCard code="CS112" name="Introduction to Programming" desc="Basics of programming in Rust" students=120 icon="</>" variant="mod-purp" href="/classes"/>
-                        <ModuleCard code="CS301" name="Data Structures & Algorithms" desc="Complexity, trees, graphs" students=156 icon="🗄️" variant="mod-blue" href="/classes"/>
-                        <ModuleCard code="CS305" name="Computer Networks" desc="Layers, protocols, security" students=67 icon="🧩" variant="mod-orange" href="/classes"/>
-                        <ModuleCard code="CS410" name="Artificial Intelligence" desc="Search, optimization, ML" students=43 icon="🍃" variant="mod-green" href="/classes"/>
-                    </div>
+                    <Suspense fallback=move || view! { <div class="loading">"Loading modules..."</div> }>
+                        {move || {
+                            modules_resource.get().map(|modules_opt| {
+                                match modules_opt {
+                                    Some(modules) if !modules.is_empty() => {
+                                        view! {
+                                            <div class="modules-grid">
+                                                {modules.into_iter().map(|module| {
+                                                    view! { <DynamicModuleCard module=module/> }
+                                                }).collect_view()}
+                                            </div>
+                                        }.into_view()
+                                    }
+                                    Some(_) => {
+                                        view! {
+                                            <div class="empty-state">
+                                                <p>"No modules yet. Create your first module to get started!"</p>
+                                            </div>
+                                        }.into_view()
+                                    }
+                                    None => {
+                                        view! {
+                                            <div class="empty-state">
+                                                <p>"Please log in to view your modules."</p>
+                                            </div>
+                                        }.into_view()
+                                    }
+                                }
+                            })
+                        }}
+                    </Suspense>
 
                     <div class="stats-row" style="margin-top:16px;">
-                        <StatTile value="315" label="Total Students"/>
-                        <StatTile value="12" label="Classes This Week"/>
-                        <StatTile value="24h" label="Teaching Hours"/>
+                        <StatTile value=move || total_students.get() label="Total Students"/>
+                        <StatTile value=move || total_classes.get() label="Total Classes"/>
+                        <StatTile value=move || "24h".to_string() label="Teaching Hours"/>
                     </div>
                 </div>
 
@@ -82,5 +133,70 @@ pub fn HomePage() -> impl IntoView {
                 </aside>
             </div>
         </section>
+    }
+}
+
+#[component]
+fn DynamicModuleCard(module: ModuleWithStats) -> impl IntoView {
+    let navigate = use_navigate();
+    
+    // Generate icon and variant based on module code
+    let hash = module.module_code.chars().map(|c| c as u32).sum::<u32>();
+    let (icon, variant) = match hash % 4 {
+        0 => ("</>" , "mod-purp"),
+        1 => ("🗄️", "mod-blue"),
+        2 => ("🧩", "mod-orange"),
+        _ => ("🍃", "mod-green"),
+    };
+    
+    let icon_classes = format!("module-icon {}", variant);
+    let module_code_display = format!("{}", module.module_code);
+    let href = format!("/classes?module={}", module.module_code);
+    
+    let go_card = {
+        let href = href.clone();
+        let navigate = navigate.clone();
+        move |_| {
+            navigate(&href, Default::default());
+        }
+    };
+    
+    let go_card_key = {
+        let href = href.clone();
+        let navigate = navigate.clone();
+        move |e: leptos::ev::KeyboardEvent| {
+            let k = e.key();
+            if k == "Enter" || k == " " {
+                navigate(&href, Default::default());
+            }
+        }
+    };
+    
+    let go_new_class = move |e: leptos::ev::MouseEvent| {
+        e.stop_propagation();
+        e.prevent_default();
+        navigate("/classes/new", Default::default());
+    };
+
+    view! {
+        <div class="module-card-link" role="link" tabindex="0" on:click=go_card on:keydown=go_card_key>
+            <div class="card module-card">
+                <div class=icon_classes aria-hidden="true">{icon}</div>
+                <div class="module-body">
+                    <div class="module-code">{module_code_display}</div>
+                    <div class="module-name">{module.module_title.clone()}</div>
+                    <p class="module-desc">
+                        {module.description.unwrap_or_else(|| "No description available".to_string())}
+                    </p>
+                    <div class="module-meta">
+                        <span class="meta-left">
+                            <span aria-hidden="true">"👥"</span>
+                            <span class="muted">{module.student_count} " students"</span>
+                        </span>
+                        <button class="btn btn-primary btn-small" on:click=go_new_class>"+ Add Class"</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
 }

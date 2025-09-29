@@ -14,7 +14,7 @@ CREATE TABLE users (
 
 -- Create modules table (matching your ERD)
 CREATE TABLE modules (
-    moduleCode INTEGER PRIMARY KEY,
+    moduleCode TEXT PRIMARY KEY,
     moduleTitle TEXT NOT NULL,
     description TEXT,
     created_at TEXT NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE modules (
 -- Create classes table (matching your ERD)
 CREATE TABLE classes (
     classID INTEGER PRIMARY KEY AUTOINCREMENT,
-    moduleCode INTEGER NOT NULL,
+    moduleCode TEXT NOT NULL,
     title TEXT NOT NULL,
     venue TEXT,
     description TEXT,
@@ -39,7 +39,7 @@ CREATE TABLE classes (
 
 -- Create lecturer_module relationship table (matching your ERD)
 CREATE TABLE lecturer_module (
-    moduleCode INTEGER NOT NULL,
+    moduleCode TEXT NOT NULL,
     lecturerEmailAddress TEXT NOT NULL,
     created_at TEXT NOT NULL,
     PRIMARY KEY (moduleCode, lecturerEmailAddress),
@@ -49,7 +49,7 @@ CREATE TABLE lecturer_module (
 
 -- Create module_tutor relationship table (matching your ERD)
 CREATE TABLE module_tutor (
-    moduleCode INTEGER NOT NULL,
+    moduleCode TEXT NOT NULL,
     tutorEmailAddress TEXT NOT NULL,
     created_at TEXT NOT NULL,
     PRIMARY KEY (moduleCode, tutorEmailAddress),
