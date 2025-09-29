@@ -2,15 +2,16 @@ use leptos::prelude::*;
 use crate::components::{Header, Calendar, ClassList, StatTile};
 use crate::user_context::get_current_user;
 use crate::routes::module_functions::get_lecturer_modules_fn;
+use crate::routes::class_functions::get_lecturer_classes_fn;
 use crate::database::modules::ModuleWithStats;
 use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
+use chrono::Local;
 
 #[component]
 pub fn HomePage() -> impl IntoView {
     let current_user = get_current_user();
 
-    // Define greeting
     let greeting = move || -> String {
         let user = current_user.get();
         match user {
@@ -20,7 +21,7 @@ pub fn HomePage() -> impl IntoView {
                     "tutor" => "Mr./Ms.",
                     _ => "",
                 };
-                format!("Welcome back, {} {}", title, user.surname)
+                format!("Welcome back, {} {} {}", title, user.name, user.surname)
             }
             None => "Welcome back".to_string(),
         }
@@ -33,18 +34,8 @@ pub fn HomePage() -> impl IntoView {
             match email {
                 Some(email) => {
                     match get_lecturer_modules_fn(email).await {
-                        Ok(response) => {
-                            if response.success {
-                                Some(response.modules)
-                            } else {
-                                leptos::logging::log!("Failed to load modules: {}", response.message);
-                                None
-                            }
-                        }
-                        Err(e) => {
-                            leptos::logging::log!("Error loading modules: {}", e);
-                            None
-                        }
+                        Ok(response) if response.success => Some(response.modules),
+                        _ => None,
                     }
                 }
                 None => None,
@@ -52,21 +43,60 @@ pub fn HomePage() -> impl IntoView {
         },
     );
 
-    // Calculate total stats as signals
+    // Load all classes for the lecturer
+    let classes_resource = Resource::new(
+        move || current_user.get().map(|u| u.email_address.clone()),
+        |email| async move {
+            match email {
+                Some(email) => {
+                    match get_lecturer_classes_fn(email).await {
+                        Ok(response) if response.success => Some(response.classes),
+                        _ => None,
+                    }
+                }
+                None => None,
+            }
+        },
+    );
+
+    let all_classes = Signal::derive(move || {
+        classes_resource.get()
+            .and_then(|c| c)
+            .unwrap_or_default()
+    });
+
+    // Selected date for calendar
+    let selected_date = RwSignal::new(Local::now().format("%Y-%m-%d").to_string());
+    
+    // Classes for selected date
+    let filtered_classes = Signal::derive(move || {
+        let date = selected_date.get();
+        all_classes.get().into_iter()
+            .filter(|c| c.date == date)
+            .collect::<Vec<_>>()
+    });
+
+    let on_date_select = Callback::new(move |date: String| {
+        selected_date.set(date);
+    });
+
+    // Calculate stats
     let total_students = Signal::derive(move || {
-        modules_resource.get().and_then(|modules| {
-            modules.as_ref().map(|m| {
+        modules_resource.get()
+            .and_then(|modules| modules.as_ref().map(|m| {
                 m.iter().map(|mod_| mod_.student_count).sum::<i32>()
-            })
-        }).unwrap_or(0).to_string()
+            }))
+            .unwrap_or(0)
+            .to_string()
     });
 
     let total_classes = Signal::derive(move || {
-        modules_resource.get().and_then(|modules| {
-            modules.as_ref().map(|m| {
+        modules_resource.get()
+            .and_then(|modules| modules.as_ref().map(|m| {
                 m.iter().map(|mod_| mod_.class_count).sum::<i32>()
-            })
-        }).unwrap_or(0).to_string()
+            }))
+            .unwrap_or(0)
+            .to_string()
     });
 
     view! {
@@ -94,21 +124,21 @@ pub fn HomePage() -> impl IntoView {
                                                     view! { <DynamicModuleCard module=module/> }
                                                 }).collect_view()}
                                             </div>
-                                        }.into_view()
+                                        }.into_any()
                                     }
                                     Some(_) => {
                                         view! {
                                             <div class="empty-state">
-                                                {move || view! { <p>"No modules yet. Create your first module to get started!"</p> }}
+                                                <p>"No modules yet. Create your first module to get started!"</p>
                                             </div>
-                                        }.into_view()
+                                        }.into_any()
                                     }
                                     None => {
                                         view! {
                                             <div class="empty-state">
                                                 <p>"Please log in to view your modules."</p>
                                             </div>
-                                        }.into_view()
+                                        }.into_any()
                                     }
                                 }
                             })
@@ -125,11 +155,10 @@ pub fn HomePage() -> impl IntoView {
                 <aside class="schedule-panel">
                     <div class="heading">
                         <span>"Schedule"</span>
-                        <button class="kebab" aria-label="Menu">"⋯"</button>
                     </div>
-                    <Calendar/>
-                    <h3 class="heading">"Today's Classes"</h3>
-                    <ClassList/>
+                    <Calendar classes=all_classes on_date_select=on_date_select/>
+                    <h3 class="heading" style="margin-top:16px;">"Classes for " {move || selected_date.get()}</h3>
+                    <ClassList classes=filtered_classes/>
                 </aside>
             </div>
         </section>
@@ -140,7 +169,6 @@ pub fn HomePage() -> impl IntoView {
 fn DynamicModuleCard(module: ModuleWithStats) -> impl IntoView {
     let navigate = use_navigate();
     
-    // Generate icon and variant based on module code
     let hash = module.module_code.chars().map(|c| c as u32).sum::<u32>();
     let (icon, variant) = match hash % 4 {
         0 => ("</>" , "mod-purp"),
@@ -150,7 +178,7 @@ fn DynamicModuleCard(module: ModuleWithStats) -> impl IntoView {
     };
     
     let icon_classes = format!("module-icon {}", variant);
-    let module_code_display = format!("{}", module.module_code);
+    let module_code_display = module.module_code.clone();
     let href = format!("/classes?module={}", module.module_code);
     
     let go_card = {
@@ -172,10 +200,13 @@ fn DynamicModuleCard(module: ModuleWithStats) -> impl IntoView {
         }
     };
     
-    let go_new_class = move |e: leptos::ev::MouseEvent| {
-        e.stop_propagation();
-        e.prevent_default();
-        navigate("/classes/new", Default::default());
+    let go_new_class = {
+        let module_code = module.module_code.clone();
+        move |e: leptos::ev::MouseEvent| {
+            e.stop_propagation();
+            e.prevent_default();
+            navigate(&format!("/classes/new?module={}", module_code), Default::default());
+        }
     };
 
     view! {

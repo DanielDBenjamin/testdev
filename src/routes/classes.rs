@@ -9,7 +9,7 @@ pub fn ClassesPage() -> impl IntoView {
     let query = use_query_map();
     
     let module_code = Signal::derive(move || {
-        query.read().get("module").unwrap_or_default()
+        query.with(|q| q.get("module").unwrap_or_default())
     });
 
     // Load classes for the module
@@ -26,17 +26,61 @@ pub fn ClassesPage() -> impl IntoView {
         },
     );
 
+    // Calculate stats
+    let total_classes = Signal::derive(move || {
+        classes_resource.get()
+            .and_then(|c| c.as_ref().map(|classes| classes.len()))
+            .unwrap_or(0)
+    });
+
+    let completed_classes = Signal::derive(move || {
+        classes_resource.get()
+            .and_then(|c| c.as_ref().map(|classes| {
+                classes.iter().filter(|c| c.status == "completed").count()
+            }))
+            .unwrap_or(0)
+    });
+
+    let upcoming_classes = Signal::derive(move || {
+        classes_resource.get()
+            .and_then(|c| c.as_ref().map(|classes| {
+                classes.iter().filter(|c| c.status == "upcoming").count()
+            }))
+            .unwrap_or(0)
+    });
+
     view! {
         <section class="classes-page">
-            <div class="page-header" style="display:flex;align-items:center;gap:8px;">
-                <A href="/home" attr:class="link">"← Back"</A>
-                <div>
-                    <h1 class="page-title">{move || module_code.get()}</h1>
-                    <p class="page-subtitle">"2025"</p>
+            <div class="classes-header">
+                <div class="header-content">
+                    <A href="/home" attr:class="back-link">"← Back"</A>
+                    <div class="header-text">
+                        <h1 class="page-title">"Data Structures & Algorithms"</h1>
+                        <p class="page-subtitle">{move || format!("{} • 2025", module_code.get())}</p>
+                    </div>
                 </div>
-                <div style="margin-left:auto; display:flex; gap:8px;">
+                <div class="header-actions">
                     <button class="btn btn-outline">"⭳ Export"</button>
                     <A href=move || format!("/classes/new?module={}", module_code.get()) attr:class="btn btn-primary">"+ Add Class"</A>
+                </div>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-tile">
+                    <div class="stat-value">{move || total_classes.get().to_string()}</div>
+                    <div class="stat-label">"Total Classes"</div>
+                </div>
+                <div class="stat-tile">
+                    <div class="stat-value" style="color:#10b981;">{move || completed_classes.get().to_string()}</div>
+                    <div class="stat-label">"Completed"</div>
+                </div>
+                <div class="stat-tile">
+                    <div class="stat-value" style="color:#2563eb;">{move || upcoming_classes.get().to_string()}</div>
+                    <div class="stat-label">"Upcoming"</div>
+                </div>
+                <div class="stat-tile">
+                    <div class="stat-value">"156"</div>
+                    <div class="stat-label">"Enrolled Students"</div>
                 </div>
             </div>
 
@@ -46,17 +90,17 @@ pub fn ClassesPage() -> impl IntoView {
                         match classes_opt {
                             Some(classes) if !classes.is_empty() => {
                                 view! {
-                                    <div class="card" style="padding:0; margin-top:16px;">
-                                        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--sidebar-border);">
-                                            <h3 class="heading" style="margin:0;">"Classes Schedule"</h3>
-                                            <div style="display:flex; gap:8px;">
-                                                <input class="input" placeholder="Search classes..." style="width:240px;" />
+                                    <div class="classes-section">
+                                        <div class="section-header">
+                                            <h3 class="heading">"Classes Schedule"</h3>
+                                            <div class="search-controls">
+                                                <input class="input search-input" placeholder="Search classes..." />
                                                 <button class="btn btn-outline">"All Status"</button>
                                             </div>
                                         </div>
 
-                                        <div style="overflow:auto;">
-                                            <table class="table">
+                                        <div class="classes-table-wrapper">
+                                            <table class="classes-table">
                                                 <thead>
                                                     <tr>
                                                         <th>"Class Title"</th>
@@ -75,21 +119,22 @@ pub fn ClassesPage() -> impl IntoView {
                                             </table>
                                         </div>
                                     </div>
-                                }.into_view()
+                                }.into_any()
                             }
                             Some(_) => {
                                 view! {
                                     <div class="empty-state">
-                                        <p>"No classes yet. Create your first class to get started!"</p>                                
+                                        <p>"No classes yet. Create your first class to get started!"</p>
+                                        <A href=move || format!("/classes/new?module={}", module_code.get()) attr:class="btn btn-primary">"+ Add Class"</A>
                                     </div>
-                                }.into_view()
+                                }.into_any()
                             }
                             None => {
                                 view! {
                                     <div class="empty-state">
                                         <p>"Module not found or no classes available."</p>
                                     </div>
-                                }.into_view()
+                                }.into_any()
                             }
                         }
                     })
@@ -102,30 +147,65 @@ pub fn ClassesPage() -> impl IntoView {
 #[component]
 fn ClassRow(class: Class) -> impl IntoView {
     let badge_class = match class.status.as_str() {
-        "completed" => "badge badge-green",
-        "in_progress" => "badge badge-amber",
-        _ => "badge badge-blue",
+        "completed" => "status-badge completed",
+        "in_progress" => "status-badge in-progress",
+        _ => "status-badge upcoming",
     };
 
-    let status_display = match class.status.as_str() {
+    let status_text = match class.status.as_str() {
         "completed" => "Completed",
         "in_progress" => "In Progress",
         "upcoming" => "Upcoming",
-        _ => &class.status,
+        _ => "Unknown",
     };
 
+    let class_id = class.class_id;
+    let status_in_progress = class.status.clone() == "in_progress";
+    let status_upcoming = class.status.clone() == "upcoming";
     view! {
         <tr>
             <td>
-                <div class="t-title">{class.title.clone()}</div>
+                <div class="class-cell">
+                    <div class="class-title">{class.title.clone()}</div>
+                    <div class="class-subtitle">"Week 1 • Lecture 1"</div>
+                </div>
             </td>
-            <td>{class.date.clone()}</td>
-            <td>{class.time.clone()}</td>
-            <td>{class.venue.unwrap_or_else(|| "TBA".to_string())}</td>
-            <td><span class=badge_class>{status_display}</span></td>
-            <td style="white-space:nowrap;">
-                <button class="btn btn-outline btn-small">"Edit"</button>
-                <button class="btn btn-outline btn-small" style="margin-left:6px; color:#ef4444; border-color:#fecaca;">"Remove"</button>
+            <td>
+                <div class="date-cell">
+                    <div>{class.date.clone()}</div>
+                </div>
+            </td>
+            <td>
+                <div class="time-cell">
+                    <div>{class.time.clone()}</div>
+                    <div class="duration">"90 minutes"</div>
+                </div>
+            </td>
+            <td>
+                <div class="venue-cell">
+                    <div>{class.venue.clone().unwrap_or_else(|| "TBA".to_string())}</div>
+                    <div class="building">"Building A"</div>
+                </div>
+            </td>
+            <td>
+                <div class="status-cell">
+                    <span class=badge_class>{status_text}</span>
+                    <Show when=move || status_in_progress >
+                        <button class="end-btn">"End"</button>
+                    </Show>
+                    <Show when=move || status_upcoming >
+                        <button class="start-btn">"Start"</button>
+                    </Show>
+                </div>
+            </td>
+            <td>
+                <div class="actions-cell">
+                    <A href=format!("/classes/edit?id={}", class_id) attr:class="btn-icon edit">
+                        <span>"✏"</span>
+                        "Edit"
+                    </A>
+                    <button class="btn-icon remove">"🗑 Remove"</button>
+                </div>
             </td>
         </tr>
     }

@@ -31,6 +31,16 @@ pub struct CreateClassRequest {
     pub date: String,
     pub time: String,
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateClassRequest {
+    pub title: String,
+    pub description: Option<String>,
+    pub date: String,
+    pub time: String,
+    pub duration: i32,
+    pub venue: Option<String>,
+    pub recurring: Option<String>,
+}
 
 // Server-side implementation
 #[cfg(feature = "ssr")]
@@ -38,7 +48,7 @@ use sqlx::FromRow;
 
 #[cfg(feature = "ssr")]
 #[derive(Debug, Clone, FromRow)]
-struct DbClass {
+pub struct DbClass {
     #[sqlx(rename = "classID")]
     class_id: i64,
     #[sqlx(rename = "moduleCode")]
@@ -175,4 +185,63 @@ pub async fn delete_class(
         .map_err(|e| format!("Failed to delete class: {}", e))?;
 
     Ok(())
+}
+
+/// Update an existing class
+#[cfg(feature = "ssr")]
+pub async fn update_class(
+    pool: &SqlitePool,
+    class_id: i64,
+    request: UpdateClassRequest,
+) -> Result<Class, String> {
+    let now = Utc::now().to_rfc3339();
+
+    // First update the class
+    sqlx::query(
+        r#"
+        UPDATE classes 
+        SET title = ?, description = ?, date = ?, time = ?, 
+            venue = ?, recurring = ?, updated_at = ?
+        WHERE classID = ?
+        "#,
+    )
+    .bind(&request.title)
+    .bind(&request.description)
+    .bind(&request.date)
+    .bind(&request.time)
+    .bind(&request.venue)
+    .bind(&request.recurring)
+    .bind(&now)
+    .bind(class_id)
+    .execute(pool)
+    .await
+    .map_err(|e| format!("Failed to update class: {}", e))?;
+
+    // Then fetch and return the updated class
+    let class = sqlx::query_as::<_, DbClass>(
+        "SELECT * FROM classes WHERE classID = ?"
+    )
+    .bind(class_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| format!("Failed to fetch updated class: {}", e))?;
+
+    Ok(class.into())
+}
+
+/// Get a single class by ID
+#[cfg(feature = "ssr")]
+pub async fn get_class_by_id(
+    pool: &SqlitePool,
+    class_id: i64,
+) -> Result<Class, String> {
+    let class = sqlx::query_as::<_, DbClass>(
+        "SELECT * FROM classes WHERE classID = ?"
+    )
+    .bind(class_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| format!("Failed to fetch class: {}", e))?;
+
+    Ok(class.into())
 }

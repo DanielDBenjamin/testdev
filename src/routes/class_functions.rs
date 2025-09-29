@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 use crate::database::classes::{Class, CreateClassRequest};
-
 #[cfg(feature = "ssr")]
-use crate::database::{init_db_pool, classes::{create_class, get_module_classes, delete_class}};
+use crate::database::{init_db_pool, classes::{create_class, get_module_classes, get_lecturer_classes, delete_class}};
+
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ClassResponse {
@@ -132,6 +132,115 @@ pub async fn delete_class_fn(
             success: true,
             message: "Class deleted successfully!".to_string(),
             class: None,
+        }),
+        Err(e) => Ok(ClassResponse {
+            success: false,
+            message: e,
+            class: None,
+        }),
+    }
+}
+
+/// Get all classes for a lecturer
+#[server(GetLecturerClasses, "/api")]
+pub async fn get_lecturer_classes_fn(
+    lecturer_email: String,
+) -> Result<ClassesListResponse, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+
+    match get_lecturer_classes(&pool, &lecturer_email).await {
+        Ok(classes) => Ok(ClassesListResponse {
+            success: true,
+            message: "Classes fetched successfully".to_string(),
+            classes,
+        }),
+        Err(e) => Ok(ClassesListResponse {
+            success: false,
+            message: e,
+            classes: vec![],
+        }),
+    }
+}
+
+/// Get a single class by ID
+#[server(GetClass, "/api")]
+pub async fn get_class_fn(
+    class_id: i64,
+) -> Result<ClassResponse, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+
+    let class = sqlx::query_as::<_, crate::database::classes::DbClass>(
+        "SELECT * FROM classes WHERE classID = ?"
+    )
+    .bind(class_id)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| ServerFnError::new(format!("Database error: {}", e)))?;
+
+    match class {
+        Some(c) => Ok(ClassResponse {
+            success: true,
+            message: "Class found".to_string(),
+            class: Some(c.into()),
+        }),
+        None => Ok(ClassResponse {
+            success: false,
+            message: "Class not found".to_string(),
+            class: None,
+        }),
+    }
+}
+
+// Update a class
+#[server(UpdateClassFn, "/api")]
+pub async fn update_class_fn(
+    class_id: i64,
+    title: String,
+    description: Option<String>,
+    date: String,
+    time: String,
+    venue: Option<String>,
+    recurring: Option<String>,
+) -> Result<ClassResponse, ServerFnError> {
+    if title.trim().is_empty() {
+        return Ok(ClassResponse {
+            success: false,
+            message: "Class title is required".to_string(),
+            class: None,
+        });
+    }
+
+    if date.trim().is_empty() {
+        return Ok(ClassResponse {
+            success: false,
+            message: "Class date is required".to_string(),
+            class: None,
+        });
+    }
+
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+
+    let request = UpdateClassRequest {
+        title: title.trim().to_string(),
+        description: description.filter(|s| !s.trim().is_empty()),
+        date: date.trim().to_string(),
+        time: time.trim().to_string(),
+        duration: 60, // Default duration - you might want to make this a parameter
+        venue: venue.filter(|s| !s.trim().is_empty()),
+        recurring: recurring.filter(|s| !s.trim().is_empty()),
+    };
+
+    match crate::database::classes::update_class(&pool, class_id, request).await {
+        Ok(class) => Ok(ClassResponse {
+            success: true,
+            message: "Class updated successfully!".to_string(),
+            class: Some(class),
         }),
         Err(e) => Ok(ClassResponse {
             success: false,
