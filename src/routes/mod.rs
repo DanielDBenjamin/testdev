@@ -12,8 +12,10 @@ pub mod new_module;
 pub mod auth_functions;
 pub mod module_functions;
 pub mod class_functions;
-pub use about::About;
+pub mod profile_functions;
 
+
+pub use about::About;
 pub use home::HomePage;
 pub use timetable::Timetable;
 pub use statistics::Statistics;

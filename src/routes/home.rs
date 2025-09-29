@@ -99,7 +99,7 @@ pub fn HomePage() -> impl IntoView {
                                     Some(_) => {
                                         view! {
                                             <div class="empty-state">
-                                                <p>"No modules yet. Create your first module to get started!"</p>
+                                                {move || view! { <p>"No modules yet. Create your first module to get started!"</p> }}
                                             </div>
                                         }.into_view()
                                     }
