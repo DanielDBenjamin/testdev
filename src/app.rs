@@ -7,7 +7,7 @@ use leptos_router::{
 };
 use crate::routes::{
     About, ClassesPage, Error, HomePage, Login, NewClass, NewModule, Profile, Register, Statistics,
-    Timetable,
+    Timetable, EditClass
 };
 use crate::components::{NavBar, TopBar};
 
@@ -32,6 +32,9 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
+    
+    crate::user_context::init_user_context();
+
     view! {
         <Stylesheet id="leptos" href="/pkg/clock-it.css"/>
         <Title text="Clock-It"/>
@@ -93,6 +96,7 @@ fn AppShell() -> impl IntoView {
                     <Route path=StaticSegment("statistics") view=Statistics/>
                     <Route path=StaticSegment("about") view=About/>
                     <Route path=(StaticSegment("lecturer"), StaticSegment("profile")) view=Profile/>
+                    <Route path=(StaticSegment("classes"), StaticSegment("edit")) view=EditClass/>
                 </Routes>
             </main>
             <Show when=move || show_footer.get()>

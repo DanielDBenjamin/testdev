@@ -1,8 +1,16 @@
 use leptos::prelude::*;
 use leptos_router::components::A;
-use leptos_router::hooks::use_location;
+use leptos_router::hooks::{use_location, use_navigate};
+use crate::user_context::clear_current_user;
+
 #[component]
 pub fn NavBar() -> impl IntoView {
+    let navigate = use_navigate();
+    
+    let handle_signout = move |_| {
+        clear_current_user();
+        navigate("/", Default::default());
+    };
     view! {
         <aside class="sidebar">
             <nav class="nav">
@@ -12,7 +20,7 @@ pub fn NavBar() -> impl IntoView {
                 <NavLink href="/about" label="About" icon="ℹ️"/>
             </nav>
             <div class="sidebar-footer">
-                <button class="signout">"Sign Out"</button>
+                <button class="signout" on:click=handle_signout>"Sign Out"</button>
             </div>
         </aside>
     }

@@ -1,7 +1,10 @@
 use leptos::prelude::*;
 
 #[component]
-pub fn Header(title: &'static str, subtitle: &'static str) -> impl IntoView {
+pub fn Header<F>(title: F, subtitle: String) -> impl IntoView 
+where
+    F: Fn() -> String + 'static + Send,
+{
     view! {
         <header class="page-header">
             <h1 class="page-title">{title}</h1>
@@ -9,4 +12,3 @@ pub fn Header(title: &'static str, subtitle: &'static str) -> impl IntoView {
         </header>
     }
 }
-

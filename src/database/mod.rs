@@ -10,6 +10,9 @@ pub mod models;
 #[cfg(feature = "ssr")]
 pub mod auth;
 
+pub mod modules;
+pub mod classes;
+
 #[cfg(feature = "ssr")]
 pub use connection::*;
 
@@ -21,3 +24,6 @@ pub use models::*;
 
 #[cfg(feature = "ssr")]
 pub use auth::*;
+
+pub use modules::*;
+pub use classes::*;
