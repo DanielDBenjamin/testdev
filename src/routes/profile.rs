@@ -95,7 +95,7 @@ pub fn Profile() -> impl IntoView {
         <section class="profile-page">
             <header class="page-header">
                 <div class="page-header" style="display:flex;align-items:center;gap:8px;">
-                <A href="/home" attr:class="link">"← Back"</A>
+                <A href="/home" attr:class="link">"←"</A>
                 <h1 class="page-title">"Profile & Account Settings"</h1>
             </div>
                 <p class="page-subtitle">"Manage your personal information and account preferences"</p>

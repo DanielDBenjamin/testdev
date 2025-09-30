@@ -124,7 +124,7 @@ pub fn NewModule() -> impl IntoView {
     view! {
         <section class="new-module">
             <div class="page-header" style="display:flex;align-items:center;gap:8px;">
-                <A href="/home" attr:class="link">"← Back"</A>
+                <A href="/home" attr:class="link">"←"</A>
                 <h1 class="page-title">"New Module"</h1>
                 <p class="page-subtitle" style="margin-left:8px;">"Create a new module and manage student enrollment"</p>
             </div>

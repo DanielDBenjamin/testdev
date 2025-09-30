@@ -106,7 +106,7 @@ pub fn NewClass() -> impl IntoView {
     view! {
         <section class="new-class">
             <div class="page-header" style="display:flex;align-items:center;gap:8px;">
-                <A href=move || format!("/classes?module={}", module_code()) attr:class="link">"← Back"</A>
+                <A href=move || format!("/classes?module={}", module_code()) attr:class="link">"←"</A>
                 <h1 class="page-title">"New Class"</h1>
                 <Show when=move || !module_code().is_empty()>
                     <p class="page-subtitle" style="margin-left:8px;">

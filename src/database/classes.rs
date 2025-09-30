@@ -218,15 +218,7 @@ pub async fn update_class(
     .map_err(|e| format!("Failed to update class: {}", e))?;
 
     // Then fetch and return the updated class
-    let class = sqlx::query_as::<_, DbClass>(
-        "SELECT * FROM classes WHERE classID = ?"
-    )
-    .bind(class_id)
-    .fetch_one(pool)
-    .await
-    .map_err(|e| format!("Failed to fetch updated class: {}", e))?;
-
-    Ok(class.into())
+    get_class_by_id(pool, class_id).await
 }
 
 /// Get a single class by ID

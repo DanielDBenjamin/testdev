@@ -1,7 +1,7 @@
 use leptos::prelude::*;
-use crate::database::classes::{Class, CreateClassRequest};
+use crate::database::classes::{ Class, CreateClassRequest, UpdateClassRequest };
 #[cfg(feature = "ssr")]
-use crate::database::{init_db_pool, classes::{create_class, get_module_classes, get_lecturer_classes, delete_class}};
+use crate::database::{init_db_pool, classes::{create_class, get_module_classes, get_lecturer_classes, delete_class, update_class}};
 
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -195,7 +195,7 @@ pub async fn get_class_fn(
     }
 }
 
-// Update a class
+/// Update a class
 #[server(UpdateClassFn, "/api")]
 pub async fn update_class_fn(
     class_id: i64,
@@ -231,12 +231,12 @@ pub async fn update_class_fn(
         description: description.filter(|s| !s.trim().is_empty()),
         date: date.trim().to_string(),
         time: time.trim().to_string(),
-        duration: 60, // Default duration - you might want to make this a parameter
+        duration: 60,
         venue: venue.filter(|s| !s.trim().is_empty()),
         recurring: recurring.filter(|s| !s.trim().is_empty()),
     };
 
-    match crate::database::classes::update_class(&pool, class_id, request).await {
+    match update_class(&pool, class_id, request).await {
         Ok(class) => Ok(ClassResponse {
             success: true,
             message: "Class updated successfully!".to_string(),
@@ -248,4 +248,45 @@ pub async fn update_class_fn(
             class: None,
         }),
     }
+}
+
+/// Update class status
+#[server(UpdateClassStatus, "/api")]
+pub async fn update_class_status_fn(
+    class_id: i64,
+    status: String,
+) -> Result<ClassResponse, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    
+    sqlx::query(
+        r#"
+        UPDATE classes 
+        SET status = ?, updated_at = ?
+        WHERE classID = ?
+        "#,
+    )
+    .bind(&status)
+    .bind(&now)
+    .bind(class_id)
+    .execute(&pool)
+    .await
+    .map_err(|e| ServerFnError::new(format!("Failed to update status: {}", e)))?;
+
+    let class = sqlx::query_as::<_, crate::database::classes::DbClass>(
+        "SELECT * FROM classes WHERE classID = ?"
+    )
+    .bind(class_id)
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| ServerFnError::new(format!("Failed to fetch updated class: {}", e)))?;
+
+    Ok(ClassResponse {
+        success: true,
+        message: format!("Class status updated to {}", status),
+        class: Some(class.into()),
+    })
 }

@@ -1,7 +1,5 @@
 use leptos::prelude::*;
-use crate::database::modules::{
-    Module, ModuleWithStats, CreateModuleRequest, UpdateModuleRequest,
-};
+use crate::database::modules::{ Module, ModuleWithStats, UpdateModuleRequest, CreateModuleRequest };
 
 #[cfg(feature = "ssr")]
 use crate::database::{
