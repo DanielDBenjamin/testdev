@@ -129,9 +129,9 @@ pub fn Register() -> impl IntoView {
 
                     <p class="small muted center" style="margin-top:8px;">
                         "By creating an account, you agree to our "
-                        <A href="#" attr:class="link accent">"Terms of Service"</A>
+                        <A href="#" attr:class="text-link accent">"Terms of Service"</A>
                         " and "
-                        <A href="#" attr:class="link accent">"Privacy Policy"</A>
+                        <A href="#" attr:class="text-link accent">"Privacy Policy"</A>
                     </p>
 
                     // Show messages
@@ -143,7 +143,7 @@ pub fn Register() -> impl IntoView {
 
                     <p class="muted center" style="margin-top:8px;">
                         "Already have an account? "
-                        <A href="/" attr:class="link accent">"Sign in"</A>
+                        <A href="/" attr:class="text-link accent">"Sign in"</A>
                     </p>
                 </div>
             </div>

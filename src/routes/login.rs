@@ -108,11 +108,11 @@ pub fn Login() -> impl IntoView {
                     </button>
 
                     <p class="center" style="margin:10px 0 0;">
-                        <A href="#" attr:class="link accent">"Forgot password?"</A>
+                        <A href="#" attr:class="text-link accent">"Forgot password?"</A>
                     </p>
                     <p class="muted center" style="margin:6px 0 0;">
                         "Don't have an account? "
-                        <A href="/register" attr:class="link accent">"Create account"</A>
+                        <A href="/register" attr:class="text-link accent">"Create account"</A>
                     </p>
 
                     // Show messages

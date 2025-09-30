@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use leptos_router::components::A;
 use crate::database::classes::Class;
 
 #[component]
@@ -21,16 +22,23 @@ pub fn ClassList(
                             _ => "dot-green",
                         };
                         
+                        let class_id = class.class_id;
+                        
                         view! {
                             <li class="class-item">
-                                <span class=format!("dot {}", color) aria-hidden="true"></span>
-                                <div class="class-info">
-                                    <div class="class-title">{class.title.clone()}</div>
-                                    <div class="class-sub">
-                                        {class.time.clone()} 
-                                        {class.venue.as_ref().map(|v| format!(" – {}", v)).unwrap_or_default()}
+                                <A 
+                                    href=format!("/classes/edit?id={}", class_id)
+                                    attr:class="class-item-link"
+                                >
+                                    <span class=format!("dot {}", color) aria-hidden="true"></span>
+                                    <div class="class-info">
+                                        <div class="class-title">{class.title.clone()}</div>
+                                        <div class="class-sub">
+                                            {class.time.clone()} 
+                                            {class.venue.as_ref().map(|v| format!(" – {}", v)).unwrap_or_default()}
+                                        </div>
                                     </div>
-                                </div>
+                                </A>
                             </li>
                         }
                     }).collect_view()}
@@ -39,4 +47,3 @@ pub fn ClassList(
         </div>
     }
 }
-

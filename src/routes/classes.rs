@@ -153,7 +153,6 @@ pub fn ClassesPage() -> impl IntoView {
                                 view! {
                                     <div class="empty-state">
                                         <p>"No classes yet. Create your first class to get started!"</p>
-                                        <A href=move || format!("/classes/new?module={}", module_code.get()) attr:class="btn btn-primary">"+ Add Class"</A>
                                     </div>
                                 }.into_any()
                             }
