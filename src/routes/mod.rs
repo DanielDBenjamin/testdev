@@ -14,7 +14,7 @@ pub mod module_functions;
 pub mod class_functions;
 pub mod profile_functions;
 pub mod edit_class;
-
+pub mod stats_functions; 
 
 pub use about::About;
 pub use home::HomePage;
