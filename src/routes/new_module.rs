@@ -3,7 +3,7 @@ use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
 use crate::routes::module_functions::create_module_fn;
 use crate::user_context::get_current_user;
-
+use leptos::web_sys;
 #[derive(Clone)]
 struct Student { 
     id: String, 
