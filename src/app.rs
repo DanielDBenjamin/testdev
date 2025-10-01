@@ -10,7 +10,7 @@ use crate::routes::{
     Timetable, EditClass
 };
 use crate::components::{NavBar, TopBar};
-use crate::pages::{ StudentHomePage, StudentLoginPage, RolePage };
+use crate::pages::{ StudentHomePage, StudentLoginPage, RolePage, StudentProfilePage };
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -102,6 +102,7 @@ fn AppShell() -> impl IntoView {
                     <Route path=(StaticSegment("student"), StaticSegment("home")) view=StudentHomePage/>
                     <Route path=(StaticSegment("student"), StaticSegment("login")) view=StudentLoginPage/>
                     <Route path=(StaticSegment("student"), StaticSegment("role")) view=RolePage/>
+                    <Route path=(StaticSegment("student"), StaticSegment("profile")) view=StudentProfilePage/>
                     
                 </Routes>
             </main>
