@@ -7,9 +7,9 @@ pub fn Statistics() -> impl IntoView {
         <section class="statistics">
             <h2 class="heading">"Statistics"</h2>
             <div class="stats-row">
-                <StatTile value="315" label="Total Students"/>
-                <StatTile value="12" label="Classes This Week"/>
-                <StatTile value="24h" label="Teaching Hours"/>
+                <StatTile value=move || "315".to_string() label="Total Students"/>
+                <StatTile value=move || "12".to_string() label="Classes This Week"/>
+                <StatTile value=move || "24h".to_string() label="Teaching Hours"/>
             </div>
         </section>
     }

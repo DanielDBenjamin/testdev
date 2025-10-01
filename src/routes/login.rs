@@ -3,6 +3,7 @@ use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
 use crate::routes::auth_functions::login_user;
 use crate::types::LoginData;
+use crate::user_context::set_current_user;
 
 #[component]
 pub fn Login() -> impl IntoView {
@@ -40,23 +41,11 @@ pub fn Login() -> impl IntoView {
                     success.set(auth_response.success);
                     
                     if auth_response.success {
-                        // Successful login - redirect based on role
+                        // Store the logged-in user
                         if let Some(user) = auth_response.user {
-                            match user.role.as_str() {
-                                "lecturer" | "tutor" => {
-                                    navigate("/home", Default::default());
-                                }
-                                "student" => {
-                                    // For now, redirect to home (you'll create student interface later)
-                                    navigate("/home", Default::default());
-                                }
-                                _ => {
-                                    navigate("/home", Default::default());
-                                }
-                            }
-                        } else {
-                            navigate("/home", Default::default());
+                            set_current_user(user);
                         }
+                        navigate("/home", Default::default());
                     }
                 }
                 Err(e) => {
@@ -119,11 +108,11 @@ pub fn Login() -> impl IntoView {
                     </button>
 
                     <p class="center" style="margin:10px 0 0;">
-                        <A href="#" attr:class="link accent">"Forgot password?"</A>
+                        <A href="#" attr:class="text-link accent">"Forgot password?"</A>
                     </p>
                     <p class="muted center" style="margin:6px 0 0;">
                         "Don't have an account? "
-                        <A href="/register" attr:class="link accent">"Create account"</A>
+                        <A href="/register" attr:class="text-link accent">"Create account"</A>
                     </p>
 
                     // Show messages

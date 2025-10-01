@@ -7,7 +7,6 @@ pub struct UserProfile {
     pub name: String,
     pub surname: String,
     pub email_address: String,
-    pub university: String,
     pub role: String,
 }
 

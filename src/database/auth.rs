@@ -50,15 +50,14 @@ pub async fn create_user(pool: &SqlitePool, request: CreateUserRequest) -> Resul
     // Insert new user
     let result = sqlx::query(
         r#"
-        INSERT INTO users (name, surname, emailAddress, password, university, role, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (name, surname, emailAddress, password, role, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         "#,
     )
     .bind(&request.name)
     .bind(&request.surname)
     .bind(&request.email)
     .bind(&password_hash)
-    .bind(&request.university)
     .bind(&request.role)
     .bind(&now)
     .bind(&now)
