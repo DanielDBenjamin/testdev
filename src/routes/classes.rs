@@ -4,7 +4,7 @@ use leptos_router::hooks::use_query_map;
 use crate::routes::class_functions::{get_module_classes_fn, delete_class_fn, update_class_status_fn};
 use crate::routes::module_functions::get_module_fn;
 use crate::database::classes::Class;
-use web_sys::window;
+use leptos::web_sys::window;
 
 #[component]
 pub fn ClassesPage() -> impl IntoView {
@@ -153,7 +153,6 @@ pub fn ClassesPage() -> impl IntoView {
                                 view! {
                                     <div class="empty-state">
                                         <p>"No classes yet. Create your first class to get started!"</p>
-                                        <A href=move || format!("/classes/new?module={}", module_code.get()) attr:class="btn btn-primary">"+ Add Class"</A>
                                     </div>
                                 }.into_any()
                             }

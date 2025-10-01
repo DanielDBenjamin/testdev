@@ -10,14 +10,27 @@ pub fn Calendar(
     let current_month = RwSignal::new(today);
     let selected_date = RwSignal::new(today.format("%Y-%m-%d").to_string());
 
+    // Fix: Use move closures to capture the signal properly
     let prev_month = move |_| {
-        let new_date = current_month.get() - Duration::days(30);
-        current_month.set(NaiveDate::from_ymd_opt(new_date.year(), new_date.month(), 1).unwrap());
+        current_month.update(|date| {
+            let new_date = *date - Duration::days(1);
+            *date = NaiveDate::from_ymd_opt(
+                new_date.year(), 
+                new_date.month(), 
+                1
+            ).unwrap();
+        });
     };
 
     let next_month = move |_| {
-        let new_date = current_month.get() + Duration::days(30);
-        current_month.set(NaiveDate::from_ymd_opt(new_date.year(), new_date.month(), 1).unwrap());
+        current_month.update(|date| {
+            let next = if date.month() == 12 {
+                NaiveDate::from_ymd_opt(date.year() + 1, 1, 1).unwrap()
+            } else {
+                NaiveDate::from_ymd_opt(date.year(), date.month() + 1, 1).unwrap()
+            };
+            *date = next;
+        });
     };
 
     let days_in_month = move || {
@@ -57,7 +70,7 @@ pub fn Calendar(
         let month = current_month.get();
         let date_str = format!("{:04}-{:02}-{:02}", month.year(), month.month(), day);
         selected_date.set(date_str.clone());
-        on_date_select.run(date_str); // Changed from .call() to .run()
+        on_date_select.run(date_str);
     };
 
     view! {
