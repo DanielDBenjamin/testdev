@@ -165,6 +165,7 @@ pub fn HomePage() -> impl IntoView {
     }
 }
 
+
 #[component]
 fn DynamicModuleCard(module: ModuleWithStats) -> impl IntoView {
     let navigate = use_navigate();
@@ -179,6 +180,7 @@ fn DynamicModuleCard(module: ModuleWithStats) -> impl IntoView {
     
     let icon_classes = format!("module-icon {}", variant);
     let module_code_display = module.module_code.clone();
+    let student_count = module.student_count;
     let href = format!("/classes?module={}", module.module_code);
     
     let go_card = {
@@ -199,19 +201,36 @@ fn DynamicModuleCard(module: ModuleWithStats) -> impl IntoView {
             }
         }
     };
-    
+    let value = navigate.clone();
     let go_new_class = {
         let module_code = module.module_code.clone();
         move |e: leptos::ev::MouseEvent| {
             e.stop_propagation();
             e.prevent_default();
-            navigate(&format!("/classes/new?module={}", module_code), Default::default());
+            value(&format!("/classes/new?module={}", module_code), Default::default());
+        }
+    };
+
+    let go_edit_module = {
+        let module_code = module.module_code.clone();
+        move |e: leptos::ev::MouseEvent| {
+            e.stop_propagation();
+            e.prevent_default();
+            navigate(&format!("/modules/edit?code={}", module_code), Default::default());
         }
     };
 
     view! {
         <div class="module-card-link" role="link" tabindex="0" on:click=go_card on:keydown=go_card_key>
             <div class="card module-card">
+                <button 
+                    class="module-edit-btn" 
+                    on:click=go_edit_module
+                    title="Edit module"
+                    aria-label="Edit module"
+                >
+                    "✏️"
+                </button>
                 <div class=icon_classes aria-hidden="true">{icon}</div>
                 <div class="module-body">
                     <div class="module-code">{module_code_display}</div>
@@ -222,7 +241,7 @@ fn DynamicModuleCard(module: ModuleWithStats) -> impl IntoView {
                     <div class="module-meta">
                         <span class="meta-left">
                             <span aria-hidden="true">"👥"</span>
-                            <span class="muted">{module.student_count} " students"</span>
+                            <span class="muted">{student_count} " students"</span>
                         </span>
                         <button class="btn btn-primary btn-small" on:click=go_new_class>"+ Add Class"</button>
                     </div>

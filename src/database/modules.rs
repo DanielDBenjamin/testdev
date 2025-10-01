@@ -167,10 +167,11 @@ pub async fn get_lecturer_modules_with_stats(
             m.moduleTitle,
             m.description,
             COUNT(DISTINCT c.classID) as class_count,
-            0 as student_count
+            COUNT(DISTINCT ms.studentEmailAddress) as student_count
         FROM modules m
         INNER JOIN lecturer_module lm ON m.moduleCode = lm.moduleCode
         LEFT JOIN classes c ON m.moduleCode = c.moduleCode
+        LEFT JOIN module_students ms ON m.moduleCode = ms.moduleCode
         WHERE lm.lecturerEmailAddress = ?
         GROUP BY m.moduleCode, m.moduleTitle, m.description
         ORDER BY m.moduleTitle
