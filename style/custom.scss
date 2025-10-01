@@ -1296,3 +1296,279 @@ html, body {
     padding: 1.25rem 0.75rem;
   }
 }
+
+/* ========================================
+   STUDENT EDIT PROFILE PAGE STYLES
+   ======================================== */
+
+.content:has(.edit-profile-container) {
+  padding: 0 !important;
+  background-color: #f1f3f4 !important;
+  min-height: 100vh !important;
+}
+
+.edit-profile-container {
+  min-height: 100vh;
+  background-color: #f1f3f4;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Edit Profile Header */
+.edit-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.edit-profile-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.header-spacer {
+  width: 24px;
+  height: 24px;
+}
+
+/* Scrollable Content */
+.edit-profile-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+/* Edit Profile Avatar Section */
+.edit-profile-avatar-section {
+  text-align: center;
+  padding: 2rem 1.5rem 1.5rem;
+}
+
+.edit-profile-avatar-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 1rem;
+}
+
+.edit-profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.edit-profile-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 0.25rem 0;
+}
+
+.edit-profile-subtitle {
+  font-size: 0.875rem;
+  color: #666666;
+  font-weight: 400;
+  margin: 0;
+}
+
+/* Edit Profile Section */
+.edit-profile-section {
+  margin-bottom: 1.5rem;
+}
+
+.edit-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #14b8a6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 1rem;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Edit Input Groups */
+.edit-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 0.875rem;
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.875rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+
+  &:focus-within {
+    box-shadow: 0 4px 12px rgba(78, 205, 196, 0.15);
+    border: 1.5px solid #4ECDC4;
+    padding: calc(0.875rem - 1.5px) calc(1rem - 1.5px);
+  }
+}
+
+.edit-input-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 0.875rem;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.edit-icon-teal {
+  background: #D1F4F1;
+  color: #14b8a6;
+}
+
+.edit-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.9375rem;
+  color: #1a1a1a;
+  font-weight: 500;
+  padding: 0;
+
+  &::placeholder {
+    color: #CCCCCC;
+    font-weight: 400;
+  }
+
+  &:disabled,
+  &[readonly] {
+    color: #999999;
+    cursor: not-allowed;
+  }
+}
+
+.edit-input-action {
+  background: none;
+  border: none;
+  color: #999999;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-left: 0.5rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #14b8a6;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Confirm Button */
+.confirm-btn {
+  width: 100%;
+  background: #14b8a6;
+  color: white;
+  border: none;
+  padding: 1rem 1.5rem;
+  border-radius: 0.875rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.25);
+  margin-top: 1rem;
+
+  &:hover {
+    background: #0d9488;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(20, 184, 166, 0.3);
+  }
+
+  &:active {
+    background: #0f766e;
+    transform: translateY(0);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.3);
+  }
+
+  &:disabled {
+    background: #cccccc;
+    color: #888888;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+/* Responsive adjustments for edit profile */
+@media (max-width: 480px) {
+  .edit-profile-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .edit-profile-content {
+    padding: 1.25rem;
+  }
+
+  .edit-profile-avatar-section {
+    padding: 1.5rem 1rem 1rem;
+  }
+
+  .edit-profile-avatar-container {
+    width: 100px;
+    height: 100px;
+  }
+
+  .edit-profile-name {
+    font-size: 1.25rem;
+  }
+
+  .edit-input-group {
+    padding: 0.75rem 0.875rem;
+
+    &:focus-within {
+      padding: calc(0.75rem - 1.5px) calc(0.875rem - 1.5px);
+    }
+  }
+
+  .edit-input-icon {
+    width: 36px;
+    height: 36px;
+    margin-right: 0.75rem;
+  }
+
+  .confirm-btn {
+    padding: 0.875rem 1.25rem;
+    font-size: 1rem;
+  }
+}
