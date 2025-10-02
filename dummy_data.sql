@@ -1,20 +1,23 @@
+-- All users have password: password123
+-- Hash generated using the simple_hash function in auth.rs
+
 -- Insert dummy users (lecturers, tutors, and students)
 INSERT INTO users (name, surname, emailAddress, password, role, created_at, updated_at) VALUES
-('John', 'Smith', 'john.smith@university.ac.za', '$2a$10$dummyhash1', 'lecturer', datetime('now'), datetime('now')),
-('Sarah', 'Jones', 'sarah.jones@university.ac.za', '$2a$10$dummyhash2', 'lecturer', datetime('now'), datetime('now')),
-('Mike', 'Williams', 'mike.williams@university.ac.za', '$2a$10$dummyhash3', 'tutor', datetime('now'), datetime('now')),
-('Lisa', 'Anderson', 'lisa.anderson@university.ac.za', '$2a$10$dummyhash4', 'tutor', datetime('now'), datetime('now')),
+('John', 'Smith', 'john.smith@university.ac.za', 'simple_hash_17039136619706008904', 'lecturer', datetime('now'), datetime('now')),
+('Sarah', 'Jones', 'sarah.jones@university.ac.za', 'simple_hash_17039136619706008904', 'lecturer', datetime('now'), datetime('now')),
+('Mike', 'Williams', 'mike.williams@university.ac.za', 'simple_hash_17039136619706008904', 'tutor', datetime('now'), datetime('now')),
+('Lisa', 'Anderson', 'lisa.anderson@university.ac.za', 'simple_hash_17039136619706008904', 'tutor', datetime('now'), datetime('now')),
 
-('Emma', 'Brown', 'emma.brown@student.ac.za', '$2a$10$dummyhash5', 'student', datetime('now'), datetime('now')),
-('Oliver', 'Davis', 'oliver.davis@student.ac.za', '$2a$10$dummyhash6', 'student', datetime('now'), datetime('now')),
-('Ava', 'Miller', 'ava.miller@student.ac.za', '$2a$10$dummyhash7', 'student', datetime('now'), datetime('now')),
-('Liam', 'Wilson', 'liam.wilson@student.ac.za', '$2a$10$dummyhash8', 'student', datetime('now'), datetime('now')),
-('Sophia', 'Moore', 'sophia.moore@student.ac.za', '$2a$10$dummyhash9', 'student', datetime('now'), datetime('now')),
-('Noah', 'Taylor', 'noah.taylor@student.ac.za', '$2a$10$dummyhash10', 'student', datetime('now'), datetime('now')),
-('Isabella', 'Thomas', 'isabella.thomas@student.ac.za', '$2a$10$dummyhash11', 'student', datetime('now'), datetime('now')),
-('James', 'Jackson', 'james.jackson@student.ac.za', '$2a$10$dummyhash12', 'student', datetime('now'), datetime('now')),
-('Mia', 'White', 'mia.white@student.ac.za', '$2a$10$dummyhash13', 'student', datetime('now'), datetime('now')),
-('Lucas', 'Harris', 'lucas.harris@student.ac.za', '$2a$10$dummyhash14', 'student', datetime('now'), datetime('now'));
+('Emma', 'Brown', 'emma.brown@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Oliver', 'Davis', 'oliver.davis@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Ava', 'Miller', 'ava.miller@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Liam', 'Wilson', 'liam.wilson@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Sophia', 'Moore', 'sophia.moore@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Noah', 'Taylor', 'noah.taylor@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Isabella', 'Thomas', 'isabella.thomas@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('James', 'Jackson', 'james.jackson@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Mia', 'White', 'mia.white@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Lucas', 'Harris', 'lucas.harris@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now'));
 
 -- Insert modules
 INSERT INTO modules (moduleCode, moduleTitle, description, created_at, updated_at) VALUES

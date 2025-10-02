@@ -1,39 +1,60 @@
 use leptos::prelude::*;
 use crate::routes::stats_functions::*;
+use crate::user_context::get_current_user;
 
 #[component]
 pub fn Statistics() -> impl IntoView {
+    let current_user = get_current_user();
+    
     // Reactive filter signals
-    let (selected_module, set_selected_module) = signal(None::<i64>);
+    let (selected_module, set_selected_module) = signal(None::<String>);
     let (selected_class, set_selected_class) = signal(None::<i64>);
 
     // Fetch data using server functions with filters
     let overall_stats = Resource::new(
-        move || (selected_module.get(), selected_class.get()),
-        |(module, class)| async move { 
-            get_overall_stats(module, class).await 
+        move || (current_user.get().map(|u| u.email_address), selected_module.get(), selected_class.get()),
+        |(email, module, class)| async move {
+            match email {
+                Some(email) => get_overall_stats(email, module, class).await,
+                None => Err(ServerFnError::new("Not logged in".to_string()))
+            }
         }
     );
 
     let weekly_trends = Resource::new(
-        move || selected_module.get(),
-        |module| async move { 
-            get_weekly_trends(module).await 
+        move || (current_user.get().map(|u| u.email_address), selected_module.get()),
+        |(email, module)| async move {
+            match email {
+                Some(email) => get_weekly_trends(email, module).await,
+                None => Err(ServerFnError::new("Not logged in".to_string()))
+            }
         }
     );
 
     let missed_modules = Resource::new(
-        move || selected_module.get(),
-        |module| async move { 
-            get_most_missed_modules(module).await 
+        move || (current_user.get().map(|u| u.email_address), selected_module.get()),
+        |(email, module)| async move {
+            match email {
+                Some(email) => get_most_missed_modules(email, module).await,
+                None => Err(ServerFnError::new("Not logged in".to_string()))
+            }
         }
     );
-    let module_options = Resource::new(|| (), |_| async { get_module_options().await });
+    
+    let module_options = Resource::new(
+        move || current_user.get().map(|u| u.email_address),
+        |email| async move {
+            match email {
+                Some(email) => get_module_options(email).await,
+                None => Err(ServerFnError::new("Not logged in".to_string()))
+            }
+        }
+    );
     
     let class_options = Resource::new(
-        move || selected_module.get(),
-        |module| async move { 
-            get_class_options(module).await 
+        move || (current_user.get().map(|u| u.email_address), selected_module.get()),
+        |(_email, module)| async move {
+            get_class_options(module).await
         }
     );
 
@@ -54,10 +75,8 @@ pub fn Statistics() -> impl IntoView {
                                 set_selected_module.set(None);
                                 set_selected_class.set(None);
                             } else {
-                                if let Ok(code) = value.parse::<i64>() {
-                                    set_selected_module.set(Some(code));
-                                    set_selected_class.set(None);
-                                }
+                                set_selected_module.set(Some(value));
+                                set_selected_class.set(None);
                             }
                         }
                     >
@@ -67,7 +86,7 @@ pub fn Statistics() -> impl IntoView {
                                 match opts {
                                     Ok(modules) => modules.into_iter().map(|m| {
                                         view! {
-                                            <option value={m.module_code.to_string()}>
+                                            <option value={m.module_code.clone()}>
                                                 {m.module_title}
                                             </option>
                                         }

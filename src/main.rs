@@ -11,6 +11,8 @@ async fn main() {
 
     println!("🚀 Starting Clock-It server...");
 
+    clock_it::database::print_test_hash();
+        
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
     let leptos_options = conf.leptos_options;

@@ -133,3 +133,13 @@ pub async fn get_user_by_email(pool: &SqlitePool, email: &str) -> Result<Option<
 
     Ok(user.map(|u| u.into()))
 }
+
+#[cfg(feature = "ssr")]
+pub fn print_test_hash() {
+    let password = "password123";
+    let hash = hash_password(password);
+    println!("\n=================================");
+    println!("Password: {}", password);
+    println!("Hash: {}", hash);
+    println!("=================================\n");
+}
