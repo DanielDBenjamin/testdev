@@ -499,6 +499,9 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr)); 
   gap: 12px; 
 }
+.classes-page .stats-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 .stat-tile { 
   background: #f8fafc; 
   border: 1px solid var(--sidebar-border); 
