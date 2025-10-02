@@ -1,17 +1,47 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
+use crate::user_context::{clear_current_user, get_current_user};
 
 #[component]
 pub fn StudentProfilePage() -> impl IntoView {
     let navigate = use_navigate();
+    let current_user = get_current_user();
 
     let navigate_back = navigate.clone();
     let go_back = move |_| {
         navigate_back("/student/home", Default::default());
     };
-
+    let value = navigate.clone();
     let go_to_edit = move |_| {
-        navigate("/student/profile/edit", Default::default());
+        value("/student/profile/edit", Default::default());
+    };
+
+    // Handle sign out
+    let navigate_logout = navigate.clone();
+    let handle_sign_out = move |_| {
+        // Clear the current user from context and localStorage
+        clear_current_user();
+        // Redirect to login page
+        navigate_logout("/", Default::default());
+    };
+
+    // Get user info from context
+    let user_name = move || {
+        current_user.get()
+            .map(|u| format!("{} {}", u.name, u.surname))
+            .unwrap_or_else(|| "Student".to_string())
+    };
+
+    let user_email = move || {
+        current_user.get()
+            .map(|u| u.email_address.clone())
+            .unwrap_or_else(|| "student@university.edu".to_string())
+    };
+
+    let user_id = move || {
+        current_user.get()
+            .map(|u| format!("STU-{:06}", u.user_id))
+            .unwrap_or_else(|| "STU-000000".to_string())
     };
 
     view! {
@@ -51,7 +81,7 @@ pub fn StudentProfilePage() -> impl IntoView {
                             </svg>
                         </button>
                     </div>
-                    <h2 class="profile-name">"Sarah Johnson"</h2>
+                    <h2 class="profile-name">{user_name}</h2>
                     <p class="profile-subtitle">"Computer Science Student"</p>
                 </div>
 
@@ -74,7 +104,7 @@ pub fn StudentProfilePage() -> impl IntoView {
                         </div>
                         <div class="info-text">
                             <div class="info-label">"Student ID"</div>
-                            <div class="info-value">"STU-2024-001234"</div>
+                            <div class="info-value">{user_id}</div>
                         </div>
                         <button class="info-action-btn">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -93,7 +123,7 @@ pub fn StudentProfilePage() -> impl IntoView {
                         </div>
                         <div class="info-text">
                             <div class="info-label">"Email Address"</div>
-                            <div class="info-value">"sarah.johnson@university.edu"</div>
+                            <div class="info-value">{user_email}</div>
                         </div>
                         <button class="info-action-btn">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -240,7 +270,7 @@ pub fn StudentProfilePage() -> impl IntoView {
                         </svg>
                     </button>
 
-                    <button class="settings-item settings-item-danger">
+                    <button class="settings-item settings-item-danger" on:click=handle_sign_out>
                         <div class="settings-icon settings-icon-red">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>

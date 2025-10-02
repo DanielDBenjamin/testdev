@@ -9,7 +9,7 @@ use crate::user_context::set_current_user;
 pub fn Login() -> impl IntoView {
     let email = RwSignal::new(String::new());
     let password = RwSignal::new(String::new());
-    let role = RwSignal::new("Lecturer".to_string());
+    let _role = RwSignal::new("Lecturer".to_string());
     let message = RwSignal::new(String::new());
     let success = RwSignal::new(false);
 
@@ -32,7 +32,7 @@ pub fn Login() -> impl IntoView {
         login_action.dispatch(data);
     };
 
-    // Handle login response
+     // Handle login response
     Effect::new(move |_| {
         if let Some(result) = login_action.value().get() {
             match result {
@@ -43,9 +43,16 @@ pub fn Login() -> impl IntoView {
                     if auth_response.success {
                         // Store the logged-in user
                         if let Some(user) = auth_response.user {
+                            // Redirect based on role
+                            let redirect_path = match user.role.as_str() {
+                                "student" => "/student/home",
+                                "lecturer" | "tutor" => "/home",
+                                _ => "/home", // Default fallback
+                            };
+                            
                             set_current_user(user);
+                            navigate(redirect_path, Default::default());
                         }
-                        navigate("/home", Default::default());
                     }
                 }
                 Err(e) => {
@@ -65,21 +72,7 @@ pub fn Login() -> impl IntoView {
                     </div>
                     <p class="tagline">"Track your time, manage your life"</p>
                 </div>
-                <div class="segmented">
-                    <button
-                        class=move || if role.get() == "Lecturer" { "seg-btn active" } else { "seg-btn" }
-                        on:click=move |_| role.set("Lecturer".to_string())
-                    >"Lecturer"</button>
-                    <button
-                        class=move || if role.get() == "Tutor" { "seg-btn active" } else { "seg-btn" }
-                        on:click=move |_| role.set("Tutor".to_string())
-                    >"Tutor"</button>
-                    <button
-                        class=move || if role.get() == "Student" { "seg-btn active" } else { "seg-btn" }
-                        on:click=move |_| role.set("Student".to_string())
-                    >"Student"</button>
-                </div>
-
+                
                 <div class="form">
                     <label class="label">"Email"</label>
                     <div class="input-group">

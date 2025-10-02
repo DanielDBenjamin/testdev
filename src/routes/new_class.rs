@@ -12,6 +12,7 @@ pub fn NewClass() -> impl IntoView {
     let venue = RwSignal::new(String::new());
     let desc = RwSignal::new(String::new());
     let recurring = RwSignal::new("No repeat".to_string());
+    let recurrence_count = RwSignal::new("8".to_string()); // Store as String for input binding
     let date = RwSignal::new(String::new());
     let hour = RwSignal::new("10".to_string());
     let minute = RwSignal::new("00".to_string());
@@ -23,7 +24,7 @@ pub fn NewClass() -> impl IntoView {
         query.with(|q| q.get("module").unwrap_or_default())
     };
     
-    let create_action = Action::new(move |(module, title_val, venue_val, desc_val, recurring_val, date_val, time_val): &(String, String, Option<String>, Option<String>, Option<String>, String, String)| {
+    let create_action = Action::new(move |(module, title_val, venue_val, desc_val, recurring_val, date_val, time_val, count): &(String, String, Option<String>, Option<String>, Option<String>, String, String, Option<i32>)| {
         let module = module.clone();
         let title_val = title_val.clone();
         let venue_val = venue_val.clone();
@@ -31,8 +32,9 @@ pub fn NewClass() -> impl IntoView {
         let recurring_val = recurring_val.clone();
         let date_val = date_val.clone();
         let time_val = time_val.clone();
+        let count = *count;
         async move {
-            create_class_fn(module, title_val, venue_val, desc_val, recurring_val, date_val, time_val).await
+            create_class_fn(module, title_val, venue_val, desc_val, recurring_val, date_val, time_val, count).await
         }
     });
 
@@ -40,7 +42,7 @@ pub fn NewClass() -> impl IntoView {
         message.set(String::new());
         success.set(false);
         
-        let current_module = module_code(); // Call the closure
+        let current_module = module_code();
         
         if current_module.is_empty() {
             message.set("No module selected. Please go back and select a module.".to_string());
@@ -63,14 +65,23 @@ pub fn NewClass() -> impl IntoView {
         let desc_val = if desc.get().trim().is_empty() { None } else { Some(desc.get()) };
         let recurring_val = if recurring.get() == "No repeat" { None } else { Some(recurring.get()) };
         
+        // Only pass recurrence_count if recurring is enabled
+        let count_val = if recurring.get() != "No repeat" {
+            // Parse string to i32, default to 8 if invalid
+            recurrence_count.get().parse::<i32>().ok()
+        } else {
+            None
+        };
+        
         create_action.dispatch((
-            current_module, // Use the captured value
+            current_module,
             title.get(),
             venue_val,
             desc_val,
             recurring_val,
             date.get(),
             time_str,
+            count_val,
         ));
     };
 
@@ -85,12 +96,12 @@ pub fn NewClass() -> impl IntoView {
                         
                         if response.success {
                             let nav = navigate.clone();
-                            let mod_code = module_code(); // Call the closure
+                            let mod_code = module_code();
                             set_timeout(
                                 move || {
                                     nav(&format!("/classes?module={}", mod_code), Default::default());
                                 },
-                                std::time::Duration::from_millis(1000),
+                                std::time::Duration::from_millis(1500),
                             );
                         }
                     }
@@ -134,6 +145,45 @@ pub fn NewClass() -> impl IntoView {
                             <option>"Weekly"</option>
                             <option>"Monthly"</option>
                         </select>
+
+                        // Show recurrence count input if recurring is enabled
+                        <Show when=move || recurring.get() != "No repeat">
+                            <div style="margin-top:10px;">
+                                <label class="label">"Number of Occurrences"</label>
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    <input 
+                                        type="number" 
+                                        class="input" 
+                                        min="2" 
+                                        max="52"
+                                        bind:value=recurrence_count
+                                        style="max-width:120px;"
+                                    />
+                                    <span class="muted" style="font-size:13px;">
+                                        {move || match recurring.get().as_str() {
+                                            "Daily" => "days",
+                                            "Weekly" => "weeks",
+                                            "Monthly" => "months",
+                                            _ => "instances"
+                                        }}
+                                    </span>
+                                </div>
+                                <p class="muted" style="font-size:12px; margin-top:6px;">
+                                    {move || {
+                                        let count = recurrence_count.get().parse::<i32>().unwrap_or(8);
+                                        let pattern = recurring.get();
+                                        format!("This will create {} {} class instances", count, 
+                                            match pattern.as_str() {
+                                                "Daily" => "daily",
+                                                "Weekly" => "weekly",
+                                                "Monthly" => "monthly",
+                                                _ => ""
+                                            }
+                                        )
+                                    }}
+                                </p>
+                            </div>
+                        </Show>
                     </div>
 
                     <aside class="form-side">

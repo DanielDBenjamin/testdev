@@ -26,6 +26,22 @@ pub fn init_user_context() {
     }
 }
 
+pub fn get_user_role() -> Option<String> {
+    if let Some(signal) = CURRENT_USER.get() {
+        signal.get().map(|user| user.role.clone())
+    } else {
+        None
+    }
+}
+
+pub fn is_student() -> bool {
+    get_user_role().map(|role| role == "student").unwrap_or(false)
+}
+
+pub fn is_lecturer_or_tutor() -> bool {
+    get_user_role().map(|role| role == "lecturer" || role == "tutor").unwrap_or(false)
+}
+
 pub fn set_current_user(user: UserProfile) {
     web_sys::console::log_1(&format!("Setting user: {} {}", user.name, user.surname).into());
     
