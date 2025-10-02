@@ -24,6 +24,9 @@ pub fn EditModule() -> impl IntoView {
     let show_add_modal = RwSignal::new(false);
     let show_import_modal = RwSignal::new(false);
     let show_delete_modal = RwSignal::new(false);
+    let show_remove_student_modal = RwSignal::new(false);
+    let student_to_remove = RwSignal::new(String::new());
+    let student_name_to_remove = RwSignal::new(String::new());
     let csv_content = RwSignal::new(String::new());
     let student_message = RwSignal::new(String::new());
     
@@ -55,7 +58,6 @@ pub fn EditModule() -> impl IntoView {
         },
     );
     
-
     // Populate form when module loads
     Effect::new(move |_| {
         if let Some(Some(module)) = module_resource.get() {
@@ -102,11 +104,12 @@ pub fn EditModule() -> impl IntoView {
             unenroll_student(module_code, email).await
         }
     });
+    
     let delete_module_action = Action::new(move |module_code: &String| {
-    let module_code = module_code.clone();
-    async move {
-        crate::routes::module_functions::delete_module_fn(module_code).await
-    }
+        let module_code = module_code.clone();
+        async move {
+            crate::routes::module_functions::delete_module_fn(module_code).await
+        }
     });
 
     let on_submit = move |_| {
@@ -127,48 +130,48 @@ pub fn EditModule() -> impl IntoView {
         
         update_action.dispatch((code, title.get(), desc_val));
     };
+    
     // Handle delete module
-let on_delete_module = move |_| {
-    show_delete_modal.set(true);
-};
+    let on_delete_module = move |_| {
+        show_delete_modal.set(true);
+    };
 
-let on_confirm_delete = move |_| {
-    delete_module_action.dispatch(module_code.get());
-};
+    let on_confirm_delete = move |_| {
+        delete_module_action.dispatch(module_code.get());
+    };
 
-let on_cancel_delete = move |_| {
-    show_delete_modal.set(false);
-};
+    let on_cancel_delete = move |_| {
+        show_delete_modal.set(false);
+    };
 
-// Handle delete response
-Effect::new({
-    let navigate = navigate.clone();
-    move |_| {
-        if let Some(result) = delete_module_action.value().get() {
-            match result {
-                Ok(response) => {
-                    if response.success {
-                        let nav = navigate.clone();
-                        set_timeout(
-                            move || {
-                                nav("/home", Default::default());
-                            },
-                            std::time::Duration::from_millis(500),
-                        );
-                    } else {
-                        message.set(response.message);
+    // Handle delete response
+    Effect::new({
+        let navigate = navigate.clone();
+        move |_| {
+            if let Some(result) = delete_module_action.value().get() {
+                match result {
+                    Ok(response) => {
+                        if response.success {
+                            let nav = navigate.clone();
+                            set_timeout(
+                                move || {
+                                    nav("/home", Default::default());
+                                },
+                                std::time::Duration::from_millis(500),
+                            );
+                        } else {
+                            message.set(response.message);
+                            success.set(false);
+                        }
+                    }
+                    Err(e) => {
+                        message.set(format!("Error: {}", e));
                         success.set(false);
                     }
                 }
-                Err(e) => {
-                    message.set(format!("Error: {}", e));
-                    success.set(false);
-                }
             }
         }
-    }
-});
-    
+    });
 
     // Handle update response
     Effect::new({
@@ -225,11 +228,13 @@ Effect::new({
                             students.update(|s| s.push(student));
                         }
                         new_student_email.set(String::new());
-                        show_add_modal.set(false);
                     }
+                    // Always close modal on response (success or failure)
+                    show_add_modal.set(false);
                 }
                 Err(e) => {
                     student_message.set(format!("Error: {}", e));
+                    show_add_modal.set(false);
                 }
             }
         }
@@ -287,22 +292,48 @@ Effect::new({
         }
     });
 
-    // Handle student removal
-    let handle_remove = move |email: String| {
-        unenroll_action.dispatch((module_code.get(), email));
+    // Handle student removal - open confirmation modal
+    let handle_remove = move |email: String, name: String| {
+        leptos::logging::log!("=== HANDLE REMOVE CALLED ===");
+        leptos::logging::log!("Email: {}", email);
+        leptos::logging::log!("Name: {}", name);
+        student_to_remove.set(email);
+        student_name_to_remove.set(name);
+        leptos::logging::log!("Setting show_remove_student_modal to true");
+        show_remove_student_modal.set(true);
+        leptos::logging::log!("Modal should now be visible: {}", show_remove_student_modal.get());
+    };
+    
+    // Confirm student removal
+    let on_confirm_remove_student = move |_| {
+        let email = student_to_remove.get();
+        let module = module_code.get();
+        unenroll_action.dispatch((module, email));
+        show_remove_student_modal.set(false);
+    };
+    
+    let on_cancel_remove_student = move |_| {
+        show_remove_student_modal.set(false);
     };
 
-    // Handle unenroll response
+    // Handle unenroll response - COPY THE EXACT PATTERN FROM ENROLL!
     Effect::new(move |_| {
         if let Some(result) = unenroll_action.value().get() {
             match result {
                 Ok(response) => {
+                    student_message.set(response.message.clone());
+                    
                     if response.success {
-                        students.update(|s| {
-                            s.retain(|student| !response.message.contains(&student.email_address));
+                        // Reload the entire student list from server (same as bulk import does)
+                        let code = module_code.get();
+                        leptos::task::spawn_local(async move {
+                            if let Ok(response) = get_module_students(code).await {
+                                if response.success {
+                                    students.set(response.students);
+                                }
+                            }
                         });
                     }
-                    student_message.set(response.message);
                 }
                 Err(e) => {
                     student_message.set(format!("Error: {}", e));
@@ -311,6 +342,7 @@ Effect::new({
         }
     });
 
+    // NOW the view starts here
     view! {
         <section class="edit-module">
             <div class="page-header" style="display:flex;align-items:center;gap:8px;">
@@ -354,25 +386,25 @@ Effect::new({
                                 </Show>
 
                                 <div class="actions-row">
-                                <button 
-                                    class="btn btn-accent" 
-                                    on:click=on_submit
-                                    disabled=move || update_action.pending().get()
-                                >
-                                    {move || if update_action.pending().get() { 
-                                        "Saving...".into_view() 
-                                    } else { 
-                                        "Save Changes".into_view() 
-                                    }}
-                                </button>
-                                <button 
-                                    class="btn btn-danger" 
-                                    on:click=on_delete_module
-                                >
-                                    "Delete Module"
-                                </button>
-                                <A href="/home" attr:class="btn btn-outline">"Cancel"</A>
-                            </div>
+                                    <button 
+                                        class="btn btn-accent" 
+                                        on:click=on_submit
+                                        disabled=move || update_action.pending().get()
+                                    >
+                                        {move || if update_action.pending().get() { 
+                                            "Saving...".into_view() 
+                                        } else { 
+                                            "Save Changes".into_view() 
+                                        }}
+                                    </button>
+                                    <button 
+                                        class="btn btn-danger" 
+                                        on:click=on_delete_module
+                                    >
+                                        "Delete Module"
+                                    </button>
+                                    <A href="/home" attr:class="btn btn-outline">"Cancel"</A>
+                                </div>
 
                                 <div class="divider"></div>
 
@@ -418,17 +450,22 @@ Effect::new({
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {move || students.get().into_iter().map(|s| {
-                                                    let email = s.email_address.clone();
+                                                {move || students.get().into_iter().map(|student| {
+                                                    let email = student.email_address.clone();
+                                                    let full_name = format!("{} {}", student.name, student.surname);
                                                     view! {
                                                         <tr>
-                                                            <td>{format!("{} {}", s.name, s.surname)}</td>
-                                                            <td>{s.email_address.clone()}</td>
+                                                            <td>{full_name.clone()}</td>
+                                                            <td>{email.clone()}</td>
                                                             <td>
                                                                 <button 
                                                                     class="btn btn-outline btn-small" 
                                                                     style="color:#ef4444; border-color:#fecaca;"
-                                                                    on:click=move |_| handle_remove(email.clone())
+                                                                    on:click=move |_| {
+                                                                        leptos::logging::log!("Remove button clicked!");
+                                                                        leptos::logging::log!("Email: {}, Name: {}", email, full_name);
+                                                                        handle_remove(email.clone(), full_name.clone());
+                                                                    }
                                                                 >"🗑 Remove"</button>
                                                             </td>
                                                         </tr>
@@ -507,32 +544,62 @@ Effect::new({
                         }.into_any()
                     })
                 }}
-                            // Delete Confirmation Modal
-            <Show when=move || show_delete_modal.get()>
-                <div class="modal-overlay" on:click=move |_| show_delete_modal.set(false)>
-                    <div class="modal-content" on:click=|e| e.stop_propagation()>
-                        <h2 class="modal-title">"Delete Module?"</h2>
-                        <p class="modal-text">
-                            "Are you sure you want to delete this module? This action cannot be undone and will remove all associated data."
-                        </p>
-                        
-                        <div class="modal-actions">
-                            <button class="btn btn-outline" on:click=on_cancel_delete>"Cancel"</button>
-                            <button 
-                                class="btn btn-danger" 
-                                on:click=on_confirm_delete
-                                disabled=move || delete_module_action.pending().get()
-                            >
-                                {move || if delete_module_action.pending().get() { 
-                                    "Deleting...".into_view() 
-                                } else { 
-                                    "Delete Module".into_view() 
-                                }}
-                            </button>
+                
+                // Remove Student Confirmation Modal
+                <Show when=move || show_remove_student_modal.get()>
+                    <div class="modal-overlay" on:click=move |_| show_remove_student_modal.set(false)>
+                        <div class="modal-content" on:click=|e| e.stop_propagation()>
+                            <h2 class="modal-title">"Remove Student?"</h2>
+                            <p class="modal-text">
+                                "Are you sure you want to remove "
+                                <strong>{move || student_name_to_remove.get()}</strong>
+                                " from this module?"
+                            </p>
+                            
+                            <div class="modal-actions">
+                                <button class="btn btn-outline" on:click=on_cancel_remove_student>"Cancel"</button>
+                                <button 
+                                    class="btn btn-danger" 
+                                    on:click=on_confirm_remove_student
+                                    disabled=move || unenroll_action.pending().get()
+                                >
+                                    {move || if unenroll_action.pending().get() { 
+                                        "Removing...".into_view() 
+                                    } else { 
+                                        "Remove Student".into_view() 
+                                    }}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </Show>
+                </Show>
+                
+                // Delete Confirmation Modal
+                <Show when=move || show_delete_modal.get()>
+                    <div class="modal-overlay" on:click=move |_| show_delete_modal.set(false)>
+                        <div class="modal-content" on:click=|e| e.stop_propagation()>
+                            <h2 class="modal-title">"Delete Module?"</h2>
+                            <p class="modal-text">
+                                "Are you sure you want to delete this module? This action cannot be undone and will remove all associated data."
+                            </p>
+                            
+                            <div class="modal-actions">
+                                <button class="btn btn-outline" on:click=on_cancel_delete>"Cancel"</button>
+                                <button 
+                                    class="btn btn-danger" 
+                                    on:click=on_confirm_delete
+                                    disabled=move || delete_module_action.pending().get()
+                                >
+                                    {move || if delete_module_action.pending().get() { 
+                                        "Deleting...".into_view() 
+                                    } else { 
+                                        "Delete Module".into_view() 
+                                    }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </Show>
             </Suspense>
         </section>
     }

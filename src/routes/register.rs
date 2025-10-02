@@ -66,7 +66,9 @@ pub fn Register() -> impl IntoView {
         <div class="auth-layout">
             <div class="auth-card">
                 <div class="auth-header">
-                    <div class="brand-logo">"clock it"</div>
+                    <div class="logo-container">
+                        <img src="/logo.png" srcset="/logo.png 1x" alt="Clock It" class="brand-logo-img" width="160" height="60" />
+                    </div>
                     <p class="tagline">"Track your time, manage your life"</p>
                 </div>
                 <div class="segmented">

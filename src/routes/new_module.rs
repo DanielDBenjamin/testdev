@@ -22,6 +22,9 @@ pub fn NewModule() -> impl IntoView {
     let new_student_email = RwSignal::new(String::new());
     let show_add_modal = RwSignal::new(false);
     let show_import_modal = RwSignal::new(false);
+    let show_remove_student_modal = RwSignal::new(false);
+    let student_to_remove = RwSignal::new(String::new());
+    let student_name_to_remove = RwSignal::new(String::new());
     let csv_content = RwSignal::new(String::new());
     let student_message = RwSignal::new(String::new());
     
@@ -102,7 +105,6 @@ pub fn NewModule() -> impl IntoView {
 
     // Handle module creation response
     Effect::new({
-        let navigate = navigate.clone();
         move |_| {
             if let Some(result) = create_action.value().get() {
                 match result {
@@ -110,19 +112,8 @@ pub fn NewModule() -> impl IntoView {
                         message.set(response.message.clone());
                         success.set(response.success);
                         
-                        if response.success {
-                            // Keep form open to allow adding students
-                            // Or navigate after delay if no students to add
-                            if students.get().is_empty() {
-                                let nav = navigate.clone();
-                                set_timeout(
-                                    move || {
-                                        nav("/home", Default::default());
-                                    },
-                                    std::time::Duration::from_millis(2000),
-                                );
-                            }
-                        }
+                        // Keep form open to allow adding students
+                        // User will click "Done" button when finished
                     }
                     Err(e) => {
                         message.set(format!("Error: {}", e));
@@ -165,11 +156,13 @@ pub fn NewModule() -> impl IntoView {
                             students.update(|s| s.push(student));
                         }
                         new_student_email.set(String::new());
-                        show_add_modal.set(false);
                     }
+                    // Always close modal on response
+                    show_add_modal.set(false);
                 }
                 Err(e) => {
                     student_message.set(format!("Error: {}", e));
+                    show_add_modal.set(false);
                 }
             }
         }
@@ -216,10 +209,9 @@ pub fn NewModule() -> impl IntoView {
                         csv_content.set(String::new());
                         show_import_modal.set(false);
                         
-                        // Reload students list - trigger by changing module code signal
+                        // Reload students list
                         let module = created_module_code.get();
                         if !module.is_empty() {
-                            // Fetch updated student list
                             leptos::task::spawn_local(async move {
                                 if let Ok(response) = get_module_students(module).await {
                                     if response.success {
@@ -237,25 +229,43 @@ pub fn NewModule() -> impl IntoView {
         }
     });
 
-    // Handle student removal
-    let handle_remove = move |email: String| {
+    // Handle student removal - open confirmation modal
+    let handle_remove = move |email: String, name: String| {
+        student_to_remove.set(email);
+        student_name_to_remove.set(name);
+        show_remove_student_modal.set(true);
+    };
+    
+    // Confirm student removal
+    let on_confirm_remove_student = move |_| {
+        let email = student_to_remove.get();
         let module = created_module_code.get();
         unenroll_action.dispatch((module, email));
+        show_remove_student_modal.set(false);
+    };
+    
+    let on_cancel_remove_student = move |_| {
+        show_remove_student_modal.set(false);
     };
 
-    // Handle unenroll response
+    // Handle unenroll response - FIXED to reload list properly
     Effect::new(move |_| {
         if let Some(result) = unenroll_action.value().get() {
             match result {
                 Ok(response) => {
+                    student_message.set(response.message.clone());
+                    
                     if response.success {
-                        // Remove from local list
-                        let removed_email = response.message.clone();
-                        students.update(|s| {
-                            s.retain(|student| !removed_email.contains(&student.email_address));
+                        // Reload the entire student list from server
+                        let module = created_module_code.get();
+                        leptos::task::spawn_local(async move {
+                            if let Ok(response) = get_module_students(module).await {
+                                if response.success {
+                                    students.set(response.students);
+                                }
+                            }
                         });
                     }
-                    student_message.set(response.message);
                 }
                 Err(e) => {
                     student_message.set(format!("Error: {}", e));
@@ -369,17 +379,20 @@ pub fn NewModule() -> impl IntoView {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {move || students.get().into_iter().map(|s| {
-                                            let email = s.email_address.clone();
+                                        {move || students.get().into_iter().map(|student| {
+                                            let email = student.email_address.clone();
+                                            let full_name = format!("{} {}", student.name, student.surname);
                                             view! {
                                                 <tr>
-                                                    <td>{format!("{} {}", s.name, s.surname)}</td>
-                                                    <td>{s.email_address.clone()}</td>
+                                                    <td>{full_name.clone()}</td>
+                                                    <td>{email.clone()}</td>
                                                     <td>
                                                         <button 
                                                             class="btn btn-outline btn-small" 
                                                             style="color:#ef4444; border-color:#fecaca;"
-                                                            on:click=move |_| handle_remove(email.clone())
+                                                            on:click=move |_| {
+                                                                handle_remove(email.clone(), full_name.clone());
+                                                            }
                                                         >"🗑 Remove"</button>
                                                     </td>
                                                 </tr>
@@ -455,6 +468,35 @@ pub fn NewModule() -> impl IntoView {
                                     "Importing...".into_view() 
                                 } else { 
                                     "Import Students".into_view() 
+                                }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Show>
+
+            // Remove Student Confirmation Modal
+            <Show when=move || show_remove_student_modal.get()>
+                <div class="modal-overlay" on:click=move |_| show_remove_student_modal.set(false)>
+                    <div class="modal-content" on:click=|e| e.stop_propagation()>
+                        <h2 class="modal-title">"Remove Student?"</h2>
+                        <p class="modal-text">
+                            "Are you sure you want to remove "
+                            <strong>{move || student_name_to_remove.get()}</strong>
+                            " from this module?"
+                        </p>
+                        
+                        <div class="modal-actions">
+                            <button class="btn btn-outline" on:click=on_cancel_remove_student>"Cancel"</button>
+                            <button 
+                                class="btn btn-danger" 
+                                on:click=on_confirm_remove_student
+                                disabled=move || unenroll_action.pending().get()
+                            >
+                                {move || if unenroll_action.pending().get() { 
+                                    "Removing...".into_view() 
+                                } else { 
+                                    "Remove Student".into_view() 
                                 }}
                             </button>
                         </div>
