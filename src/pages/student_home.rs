@@ -1,8 +1,10 @@
 use leptos::prelude::*;
 use crate::components::QrScanner;
+use leptos_router::hooks::use_navigate;
 
 #[component]
 pub fn StudentHomePage() -> impl IntoView {
+    let navigate = use_navigate();
     let (show_scanner, set_show_scanner) = signal(false);
     let (_scanned_data, set_scanned_data) = signal(None::<String>);
 
@@ -28,6 +30,15 @@ pub fn StudentHomePage() -> impl IntoView {
         set_show_scanner.set(true);
     };
 
+    let navigate_clone = navigate.clone();
+    let go_to_profile = move |_| {
+        navigate_clone("/student/profile", Default::default());
+    };
+
+    let go_to_statistics = move |_| {
+        navigate("/student/statistics", Default::default());
+    };
+
     view! {
         <div class="home-container">
             {/* Header */}
@@ -42,9 +53,9 @@ pub fn StudentHomePage() -> impl IntoView {
                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                         </svg>
                     </button>
-                    <div class="profile-picture">
-                        <img src="/api/placeholder/40/40" alt="Profile" />
-                    </div>
+                    <button class="profile-picture" on:click=go_to_profile>
+                        <img src="https://mockmind-api.uifaces.co/content/human/80.jpg" alt="Profile Avatar" />
+                    </button>
                 </div>
             </header>
 
@@ -94,7 +105,7 @@ pub fn StudentHomePage() -> impl IntoView {
                     <span class="nav-label">"Scan"</span>
                 </button>
                 
-                <button class="nav-item">
+                <button class="nav-item" on:click=go_to_statistics>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="20" x2="18" y2="10"></line>
                         <line x1="12" y1="20" x2="12" y2="4"></line>
