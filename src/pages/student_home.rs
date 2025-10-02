@@ -30,8 +30,13 @@ pub fn StudentHomePage() -> impl IntoView {
         set_show_scanner.set(true);
     };
 
+    let navigate_clone = navigate.clone();
     let go_to_profile = move |_| {
-        navigate("/student/profile", Default::default());
+        navigate_clone("/student/profile", Default::default());
+    };
+
+    let go_to_statistics = move |_| {
+        navigate("/student/statistics", Default::default());
     };
 
     view! {
@@ -100,7 +105,7 @@ pub fn StudentHomePage() -> impl IntoView {
                     <span class="nav-label">"Scan"</span>
                 </button>
                 
-                <button class="nav-item">
+                <button class="nav-item" on:click=go_to_statistics>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="20" x2="18" y2="10"></line>
                         <line x1="12" y1="20" x2="12" y2="4"></line>
