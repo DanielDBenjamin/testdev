@@ -1,0 +1,481 @@
+use leptos::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "ssr")]
+use crate::database::init_db_pool;
+
+// Statistics data structures
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct OverallStats {
+    pub attendance_rate: f64,
+    pub total_students: i64,
+    pub total_classes: i64,
+    pub absent_today: i64,
+    pub avg_class_size: f64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct WeeklyTrend {
+    pub week: String,
+    pub attendance_rate: f64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ModuleAbsence {
+    pub module_title: String,
+    pub absence_rate: f64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ModuleOption {
+    pub module_code: String,  // Changed from i64 to String
+    pub module_title: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ClassOption {
+    pub class_id: i64,
+    pub title: String,
+}
+
+// Server function to get overall statistics with optional filters
+#[server(GetOverallStats, "/api")]
+pub async fn get_overall_stats(
+    lecturer_email: String,
+    module_code: Option<String>,
+    class_id: Option<i64>,
+) -> Result<OverallStats, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+    
+    // Get overall attendance rate
+    let attendance_rate: f64 = if let Some(cid) = class_id {
+        sqlx::query_scalar(
+            r#"
+            SELECT 
+                COALESCE(
+                    CAST(SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) AS REAL) * 100.0 / 
+                    NULLIF(CAST(COUNT(*) AS REAL), 0),
+                    0.0
+                )
+            FROM attendance
+            WHERE classID = ?
+            "#
+        )
+        .bind(cid)
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(0.0)
+    } else if let Some(mc) = &module_code {
+        sqlx::query_scalar(
+            r#"
+            SELECT 
+                COALESCE(
+                    CAST(SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS REAL) * 100.0 / 
+                    NULLIF(CAST(COUNT(*) AS REAL), 0),
+                    0.0
+                )
+            FROM attendance a
+            JOIN classes c ON a.classID = c.classID
+            JOIN lecturer_module lm ON c.moduleCode = lm.moduleCode
+            WHERE c.moduleCode = ? AND lm.lecturerEmailAddress = ?
+            "#
+        )
+        .bind(mc)
+        .bind(&lecturer_email)
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(0.0)
+    } else {
+        sqlx::query_scalar(
+            r#"
+            SELECT 
+                COALESCE(
+                    CAST(SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS REAL) * 100.0 / 
+                    NULLIF(CAST(COUNT(*) AS REAL), 0),
+                    0.0
+                )
+            FROM attendance a
+            JOIN classes c ON a.classID = c.classID
+            JOIN lecturer_module lm ON c.moduleCode = lm.moduleCode
+            WHERE lm.lecturerEmailAddress = ?
+            "#
+        )
+        .bind(&lecturer_email)
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(0.0)
+    };
+    
+    // Get total students
+    let total_students: i64 = sqlx::query_scalar(
+        r#"SELECT COUNT(*) FROM users WHERE role = 'student'"#
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(0);
+    
+    // Get total classes (filtered by lecturer)
+    let total_classes: i64 = if let Some(cid) = class_id {
+        sqlx::query_scalar("SELECT COUNT(*) FROM classes WHERE classID = ?")
+            .bind(cid)
+            .fetch_one(&pool)
+            .await
+            .unwrap_or(0)
+    } else if let Some(mc) = &module_code {
+        sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*) 
+            FROM classes c
+            JOIN lecturer_module lm ON c.moduleCode = lm.moduleCode
+            WHERE c.moduleCode = ? AND lm.lecturerEmailAddress = ?
+            "#
+        )
+        .bind(mc)
+        .bind(&lecturer_email)
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(0)
+    } else {
+        sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*) 
+            FROM classes c
+            JOIN lecturer_module lm ON c.moduleCode = lm.moduleCode
+            WHERE lm.lecturerEmailAddress = ?
+            "#
+        )
+        .bind(&lecturer_email)
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(0)
+    };
+    
+    // Get absent today (filtered by lecturer)
+    let absent_today: i64 = if let Some(cid) = class_id {
+        sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*)
+            FROM attendance a
+            JOIN classes c ON a.classID = c.classID
+            WHERE c.date = date('now')
+            AND a.status IN ('absent', 'late')
+            AND a.classID = ?
+            "#
+        )
+        .bind(cid)
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(0)
+    } else if let Some(mc) = &module_code {
+        sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*)
+            FROM attendance a
+            JOIN classes c ON a.classID = c.classID
+            JOIN lecturer_module lm ON c.moduleCode = lm.moduleCode
+            WHERE c.date = date('now')
+            AND a.status IN ('absent', 'late')
+            AND c.moduleCode = ?
+            AND lm.lecturerEmailAddress = ?
+            "#
+        )
+        .bind(mc)
+        .bind(&lecturer_email)
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(0)
+    } else {
+        sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*)
+            FROM attendance a
+            JOIN classes c ON a.classID = c.classID
+            JOIN lecturer_module lm ON c.moduleCode = lm.moduleCode
+            WHERE c.date = date('now')
+            AND a.status IN ('absent', 'late')
+            AND lm.lecturerEmailAddress = ?
+            "#
+        )
+        .bind(&lecturer_email)
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(0)
+    };
+    
+    // Get average class size (filtered by lecturer)
+    let avg_class_size: f64 = if let Some(cid) = class_id {
+        sqlx::query_scalar(
+            r#"
+            SELECT COALESCE(COUNT(DISTINCT studentID), 0)
+            FROM attendance
+            WHERE classID = ?
+            "#
+        )
+        .bind(cid)
+        .fetch_one(&pool)
+        .await
+        .map(|count: i64| count as f64)
+        .unwrap_or(0.0)
+    } else if let Some(mc) = &module_code {
+        sqlx::query_scalar(
+            r#"
+            SELECT COALESCE(AVG(student_count), 0.0)
+            FROM (
+                SELECT COUNT(DISTINCT a.studentID) as student_count
+                FROM classes c
+                JOIN lecturer_module lm ON c.moduleCode = lm.moduleCode
+                LEFT JOIN attendance a ON c.classID = a.classID
+                WHERE c.moduleCode = ? AND lm.lecturerEmailAddress = ?
+                GROUP BY c.classID
+            )
+            "#
+        )
+        .bind(mc)
+        .bind(&lecturer_email)
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(0.0)
+    } else {
+        sqlx::query_scalar(
+            r#"
+            SELECT COALESCE(AVG(student_count), 0.0)
+            FROM (
+                SELECT COUNT(DISTINCT a.studentID) as student_count
+                FROM classes c
+                JOIN lecturer_module lm ON c.moduleCode = lm.moduleCode
+                LEFT JOIN attendance a ON c.classID = a.classID
+                WHERE lm.lecturerEmailAddress = ?
+                GROUP BY c.classID
+            )
+            "#
+        )
+        .bind(&lecturer_email)
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(0.0)
+    };
+    
+    Ok(OverallStats {
+        attendance_rate,
+        total_students,
+        total_classes,
+        absent_today,
+        avg_class_size,
+    })
+}
+
+// Server function to get weekly attendance trends
+#[server(GetWeeklyTrends, "/api")]
+pub async fn get_weekly_trends(
+    lecturer_email: String,
+    module_code: Option<String>,
+) -> Result<Vec<WeeklyTrend>, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+    
+    let query = if let Some(mc) = &module_code {
+        sqlx::query_as(
+            r#"
+            SELECT 
+                'Week ' || strftime('%W', c.date) as week,
+                COALESCE(
+                    CAST(SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS REAL) * 100.0 / 
+                    NULLIF(CAST(COUNT(*) AS REAL), 0),
+                    0.0
+                ) as rate
+            FROM classes c
+            JOIN lecturer_module lm ON c.moduleCode = lm.moduleCode
+            LEFT JOIN attendance a ON c.classID = a.classID
+            WHERE c.moduleCode = ? AND lm.lecturerEmailAddress = ?
+            GROUP BY strftime('%W', c.date)
+            HAVING COUNT(a.attendanceID) > 0
+            ORDER BY c.date DESC
+            LIMIT 8
+            "#
+        )
+        .bind(mc)
+        .bind(&lecturer_email)
+        .fetch_all(&pool)
+        .await
+        .unwrap_or_default()
+    } else {
+        sqlx::query_as(
+            r#"
+            SELECT 
+                'Week ' || strftime('%W', c.date) as week,
+                COALESCE(
+                    CAST(SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS REAL) * 100.0 / 
+                    NULLIF(CAST(COUNT(*) AS REAL), 0),
+                    0.0
+                ) as rate
+            FROM classes c
+            JOIN lecturer_module lm ON c.moduleCode = lm.moduleCode
+            LEFT JOIN attendance a ON c.classID = a.classID
+            WHERE lm.lecturerEmailAddress = ?
+            GROUP BY strftime('%W', c.date)
+            HAVING COUNT(a.attendanceID) > 0
+            ORDER BY c.date DESC
+            LIMIT 8
+            "#
+        )
+        .bind(&lecturer_email)
+        .fetch_all(&pool)
+        .await
+        .unwrap_or_default()
+    };
+    
+    let mut trends: Vec<WeeklyTrend> = query
+        .into_iter()
+        .map(|(week, rate): (String, f64)| WeeklyTrend {
+            week,
+            attendance_rate: rate,
+        })
+        .collect();
+    
+    trends.reverse();
+    
+    Ok(trends)
+}
+
+// Server function to get most missed modules
+#[server(GetMostMissedModules, "/api")]
+pub async fn get_most_missed_modules(
+    lecturer_email: String,
+    module_code: Option<String>,
+) -> Result<Vec<ModuleAbsence>, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+    
+    let rows: Vec<(String, f64)> = if let Some(mc) = &module_code {
+        sqlx::query_as(
+            r#"
+            SELECT 
+                m.moduleTitle as title,
+                COALESCE(
+                    CAST(SUM(CASE WHEN a.status IN ('absent', 'late') THEN 1 ELSE 0 END) AS REAL) * 100.0 / 
+                    NULLIF(CAST(COUNT(*) AS REAL), 0),
+                    0.0
+                ) as absence_rate
+            FROM modules m
+            JOIN classes c ON m.moduleCode = c.moduleCode
+            JOIN lecturer_module lm ON m.moduleCode = lm.moduleCode
+            LEFT JOIN attendance a ON c.classID = a.classID
+            WHERE m.moduleCode = ? AND lm.lecturerEmailAddress = ?
+            GROUP BY m.moduleCode, m.moduleTitle
+            HAVING COUNT(a.attendanceID) > 0
+            ORDER BY absence_rate DESC
+            LIMIT 5
+            "#
+        )
+        .bind(mc)
+        .bind(&lecturer_email)
+        .fetch_all(&pool)
+        .await
+        .unwrap_or_default()
+    } else {
+        sqlx::query_as(
+            r#"
+            SELECT 
+                m.moduleTitle as title,
+                COALESCE(
+                    CAST(SUM(CASE WHEN a.status IN ('absent', 'late') THEN 1 ELSE 0 END) AS REAL) * 100.0 / 
+                    NULLIF(CAST(COUNT(*) AS REAL), 0),
+                    0.0
+                ) as absence_rate
+            FROM modules m
+            JOIN classes c ON m.moduleCode = c.moduleCode
+            JOIN lecturer_module lm ON m.moduleCode = lm.moduleCode
+            LEFT JOIN attendance a ON c.classID = a.classID
+            WHERE lm.lecturerEmailAddress = ?
+            GROUP BY m.moduleCode, m.moduleTitle
+            HAVING COUNT(a.attendanceID) > 0
+            ORDER BY absence_rate DESC
+            LIMIT 5
+            "#
+        )
+        .bind(&lecturer_email)
+        .fetch_all(&pool)
+        .await
+        .unwrap_or_default()
+    };
+    
+    Ok(rows
+        .into_iter()
+        .map(|(title, rate)| ModuleAbsence {
+            module_title: title,
+            absence_rate: rate,
+        })
+        .collect())
+}
+
+// Server function to get module options for dropdown
+#[server(GetModuleOptions, "/api")]
+pub async fn get_module_options(
+    lecturer_email: String,
+) -> Result<Vec<ModuleOption>, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+    
+    let rows: Vec<(String, String)> = sqlx::query_as(
+        r#"
+        SELECT m.moduleCode, m.moduleTitle
+        FROM modules m
+        JOIN lecturer_module lm ON m.moduleCode = lm.moduleCode
+        WHERE lm.lecturerEmailAddress = ?
+        ORDER BY m.moduleTitle
+        "#
+    )
+    .bind(&lecturer_email)
+    .fetch_all(&pool)
+    .await
+    .unwrap_or_default();
+    
+    Ok(rows
+        .into_iter()
+        .map(|(code, title)| ModuleOption {
+            module_code: code,
+            module_title: title,
+        })
+        .collect())
+}
+
+// Server function to get class options for dropdown  
+#[server(GetClassOptions, "/api")]
+pub async fn get_class_options(
+    module_code: Option<String>,
+) -> Result<Vec<ClassOption>, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+    
+    let query = if let Some(mc) = &module_code {
+        sqlx::query_as(
+            r#"
+            SELECT classID, title
+            FROM classes
+            WHERE status IN ('upcoming', 'in_progress', 'completed')
+            AND moduleCode = ?
+            ORDER BY date DESC, time DESC
+            "#
+        )
+        .bind(mc)
+        .fetch_all(&pool)
+        .await
+        .unwrap_or_default()
+    } else {
+        vec![]
+    };
+    
+    Ok(query
+        .into_iter()
+        .map(|(id, title): (i64, String)| ClassOption {
+            class_id: id,
+            title,
+        })
+        .collect())
+}

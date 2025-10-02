@@ -173,7 +173,7 @@ pub fn NewClass() -> impl IntoView {
                             "✓ Save Class".into_view() 
                         }}
                     </button>
-                    <A href=move || format!("/classes?module={}", module_code()) attr:class="btn btn-outline">"× Cancel"</A>
+                    <A href="/home" attr:class="btn btn-outline">"× Cancel"</A>
                 </div>
             </div>
         </section>

@@ -14,7 +14,9 @@ pub mod module_functions;
 pub mod class_functions;
 pub mod profile_functions;
 pub mod edit_class;
-
+pub mod stats_functions; 
+pub mod student_functions;
+pub mod edit_modules;
 
 pub use about::About;
 pub use home::HomePage;
@@ -28,3 +30,4 @@ pub use new_class::NewClass;
 pub use new_module::NewModule;
 pub use profile::Profile;
 pub use edit_class::EditClass;
+pub use edit_modules::EditModule;

@@ -27,3 +27,6 @@ pub use auth::*;
 
 pub use modules::*;
 pub use classes::*;
+
+#[cfg(feature = "ssr")]
+pub use auth::print_test_hash;
