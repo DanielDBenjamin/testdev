@@ -40,33 +40,33 @@ pub fn StudentHomePage() -> impl IntoView {
     };
 
     view! {
-        <div class="home-container">
+        <div class="student-home-container">
             {/* Header */}
-            <header class="home-header">
-                <div class="header-logo">
-                    <img src="/logo.png" srcset="/logo.png 1x" alt="Clock It" class="brand-logo-img" width="160" height="60" />
+            <header class="student-home-header">
+                <div class="student-header-logo">
+                    <img src="/logo.png" srcset="/logo.png 1x" alt="Clock It" class="student-brand-logo-img" width="160" height="60" />
                 </div>
-                <div class="header-actions">
-                    <button class="notification-btn">
+                <div class="student-header-actions">
+                    <button class="student-notification-btn">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                         </svg>
                     </button>
-                    <button class="profile-picture" on:click=go_to_profile>
+                    <button class="student-profile-picture" on:click=go_to_profile>
                         <img src="https://mockmind-api.uifaces.co/content/human/80.jpg" alt="Profile Avatar" />
                     </button>
                 </div>
             </header>
 
             {/* Date and title section */}
-            <section class="date-section">
-                <h2 class="date-title">"Monday, 24 Aug"</h2>
-                <p class="date-subtitle">"Select a module to manage attendance"</p>
+            <section class="student-date-section">
+                <h2 class="student-date-title">"Monday, 24 Aug"</h2>
+                <p class="student-date-subtitle">"Select a module to manage attendance"</p>
             </section>
 
             {/* Module cards */}
-            <div class="modules-list">
+            <div class="student-modules-list">
                 {modules.into_iter().map(|(time, module_name, location, color, icon)| {
                     view! {
                         <button class="student-module-card">
@@ -84,17 +84,17 @@ pub fn StudentHomePage() -> impl IntoView {
             </div>
 
             {/* Bottom Navigation */}
-            <nav class="bottom-nav">
-                <button class="nav-item nav-item-active">
+            <nav class="student-bottom-nav">
+                <button class="student-nav-item student-nav-item-active">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
-                    <span class="nav-label">"Home"</span>
+                    <span class="student-nav-label">"Home"</span>
                 </button>
                 
-                <button class="nav-item nav-item-scan" on:click=open_scanner>
-                    <div class="scan-button">
+                <button class="student-nav-item student-nav-item-scan" on:click=open_scanner>
+                    <div class="student-scan-button">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="7"></rect>
                             <rect x="14" y="3" width="7" height="7"></rect>
@@ -102,16 +102,16 @@ pub fn StudentHomePage() -> impl IntoView {
                             <rect x="3" y="14" width="7" height="7"></rect>
                         </svg>
                     </div>
-                    <span class="nav-label">"Scan"</span>
+                    <span class="student-nav-label">"Scan"</span>
                 </button>
                 
-                <button class="nav-item" on:click=go_to_statistics>
+                <button class="student-nav-item" on:click=go_to_statistics>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="20" x2="18" y2="10"></line>
                         <line x1="12" y1="20" x2="12" y2="4"></line>
                         <line x1="6" y1="20" x2="6" y2="14"></line>
                     </svg>
-                    <span class="nav-label">"Stats"</span>
+                    <span class="student-nav-label">"Stats"</span>
                 </button>
             </nav>
 

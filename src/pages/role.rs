@@ -21,33 +21,33 @@ pub fn RolePage() -> impl IntoView {
     };
 
     view! {
-        <div class="mobile-container">
+        <div class="student-mobile-container">
             {/* Header with logo and tagline */}
-            <div class="header-section">
-                <div class="logo-container">
-                    <img src="/logo.png" srcset="/logo.png 1x" alt="Clock It" class="brand-logo-img" width="160" height="60" />
+            <div class="student-header-section">
+                <div class="student-logo-container">
+                    <img src="/logo.png" srcset="/logo.png 1x" alt="Clock It" class="student-brand-logo-img" width="160" height="60" />
                 </div>
-                <p class="tagline">"Track your time, manage your life"</p>
+                <p class="student-tagline">"Track your time, manage your life"</p>
             </div>
 
             {/* Role selection card */}
-            <div class="role-card">
-                <h2 class="role-title">"Choose your role:"</h2>
-                <div class="role-buttons">
+            <div class="student-role-card">
+                <h2 class="student-role-title">"Choose your role:"</h2>
+                <div class="student-role-buttons">
                     <button
-                        class="role-button"
+                        class="student-role-button"
                         on:click=handle_student_click
                     >
                         "Student"
                     </button>
                     <button
-                        class="role-button"
+                        class="student-role-button"
                         on:click=handle_lecturer_click
                     >
                         "Lecturer"
                     </button>
                     <button
-                        class="role-button"
+                        class="student-role-button"
                         on:click=handle_tutor_click
                     >
                         "Tutor"

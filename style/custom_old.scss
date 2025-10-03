@@ -190,23 +190,17 @@ html, body {
   background-color: #f1f3f4;
 }
 
-/* Override app-shell for student mobile pages */
-.content:has(.student-mobile-container),
-.content:has(.student-home-container),
-.content:has(.student-profile-container),
-.content:has(.student-edit-profile-container),
-.content:has(.student-stats-container) {
+/* Override app-shell for mobile pages */
+.content:has(.mobile-container),
+.content:has(.home-container),
+.content:has(.profile-container) {
   padding: 0 !important;
   background-color: #f1f3f4 !important;
   min-height: 100vh !important;
 }
 
-/* ========================================
-   STUDENT MOBILE CONTAINER & ROLE/LOGIN STYLES
-   ======================================== */
-
-/* Student mobile container - matches iPhone mockup exactly */
-.student-mobile-container {
+/* Mobile container - matches iPhone mockup exactly */
+.mobile-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -218,17 +212,17 @@ html, body {
 }
 
 /* Header section with logo and tagline */
-.student-header-section {
+.header-section {
   text-align: center;
   margin-bottom: 3rem;
   z-index: 10;
 }
 
-.student-logo-container {
+.logo-container {
   margin-bottom: 0.75rem;
 }
 
-.student-logo-text {
+.logo-text {
   font-size: 3rem;
   font-weight: 800;
   color: #1a1a1a;
@@ -240,14 +234,14 @@ html, body {
   line-height: 1;
 }
 
-.student-clock-icon {
+.clock-icon {
   font-size: 2.75rem;
   display: inline-block;
   margin: 0;
   vertical-align: middle;
 }
 
-.student-tagline {
+.tagline {
   font-size: 0.95rem;
   color: #777777;
   font-weight: 400;
@@ -256,7 +250,7 @@ html, body {
 }
 
 /* Role selection card - matches mockup exactly */
-.student-role-card {
+.role-card {
   background: white;
   padding: 2.25rem 1.75rem;
   border-radius: 1.25rem;
@@ -268,7 +262,7 @@ html, body {
   border: none;
 }
 
-.student-role-title {
+.role-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #1a1a1a;
@@ -277,13 +271,13 @@ html, body {
   line-height: 1.2;
 }
 
-.student-role-buttons {
+.role-buttons {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.student-role-button {
+.role-button {
   background: #4ECDC4;
   color: white;
   border: none;
@@ -312,7 +306,7 @@ html, body {
 }
 
 /* Login card styling */
-.student-login-card {
+.login-card {
   background: white;
   padding: 2.25rem 1.75rem;
   border-radius: 1.25rem;
@@ -323,11 +317,11 @@ html, body {
   border: none;
 }
 
-.student-login-header {
+.login-header {
   margin-bottom: 1.75rem;
 }
 
-.student-login-title {
+.login-title {
   font-size: 1.375rem;
   font-weight: 700;
   color: #1a1a1a;
@@ -336,7 +330,7 @@ html, body {
   line-height: 1.2;
 }
 
-.student-login-subtitle {
+.login-subtitle {
   font-size: 0.875rem;
   color: #777777;
   font-weight: 400;
@@ -345,32 +339,32 @@ html, body {
 }
 
 /* Form styling */
-.student-login-form {
+.login-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.student-form-group {
+.form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.student-form-label {
+.form-label {
   font-size: 0.875rem;
   font-weight: 600;
   color: #1a1a1a;
   text-align: left;
 }
 
-.student-input-container {
+.input-container {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.student-form-input {
+.form-input {
   width: 100%;
   padding: 0.75rem 1rem;
   padding-right: 2.75rem;
@@ -398,7 +392,7 @@ html, body {
   }
 }
 
-.student-input-icon {
+.input-icon {
   position: absolute;
   right: 0.875rem;
   color: #999999;
@@ -407,7 +401,7 @@ html, body {
   align-items: center;
 }
 
-.student-password-toggle {
+.password-toggle {
   position: absolute;
   right: 0.875rem;
   background: none;
@@ -430,7 +424,7 @@ html, body {
 }
 
 /* Login button */
-.student-login-button {
+.login-button {
   background: #4ECDC4;
   color: white;
   border: none;
@@ -466,7 +460,7 @@ html, body {
 }
 
 /* Login footer links */
-.student-login-footer {
+.login-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -475,8 +469,8 @@ html, body {
   border-top: 1px solid #f0f0f0;
 }
 
-.student-forgot-link,
-.student-create-link {
+.forgot-link,
+.create-link {
   font-size: 0.875rem;
   font-weight: 500;
   color: #4ECDC4;
@@ -496,19 +490,19 @@ html, body {
 }
 
 /* Terms section */
-.student-terms-section {
+.terms-section {
   margin-top: 1.25rem;
   padding-top: 0.75rem;
 }
 
-.student-terms-text {
+.terms-text {
   font-size: 0.7rem;
   color: #888888;
   line-height: 1.5;
   text-align: center;
 }
 
-.student-terms-link {
+.terms-link {
   color: #4ECDC4;
   text-decoration: none;
   font-weight: 500;
@@ -526,46 +520,46 @@ html, body {
 
 /* Mobile responsive adjustments */
 @media (max-width: 480px) {
-  .student-mobile-container {
+  .mobile-container {
     padding: 1.5rem 1rem;
   }
   
-  .student-header-section {
+  .header-section {
     margin-bottom: 2.5rem;
   }
   
-  .student-logo-text {
+  .logo-text {
     font-size: 2.75rem;
   }
   
-  .student-clock-icon {
+  .clock-icon {
     font-size: 2.5rem;
   }
   
-  .student-role-card,
-  .student-login-card {
+  .role-card,
+  .login-card {
     padding: 2rem 1.5rem;
     max-width: 100%;
     margin: 0 0.5rem;
   }
   
-  .student-tagline,
-  .student-login-subtitle {
+  .tagline,
+  .login-subtitle {
     font-size: 0.85rem;
   }
   
-  .student-role-title,
-  .student-login-title {
+  .role-title,
+  .login-title {
     font-size: 1.2rem;
   }
   
-  .student-role-button,
-  .student-login-button {
+  .role-button,
+  .login-button {
     padding: 0.8rem 1.25rem;
     font-size: 0.95rem;
   }
   
-  .student-login-footer {
+  .login-footer {
     flex-direction: column;
     gap: 0.75rem;
     text-align: center;
@@ -574,30 +568,46 @@ html, body {
 
 /* Very small screens */
 @media (max-width: 360px) {
-  .student-mobile-container {
+  .mobile-container {
     padding: 1.25rem 0.75rem;
   }
   
-  .student-logo-text {
+  .logo-text {
     font-size: 2.5rem;
   }
   
-  .student-clock-icon {
+  .clock-icon {
     font-size: 2.25rem;
   }
   
-  .student-role-card,
-  .student-login-card {
+  .role-card,
+  .login-card {
     padding: 1.75rem 1.25rem;
   }
 }
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .role-button,
+  .login-button {
+    transition: none;
+  }
+}
+
+/* Focus visible for better accessibility */
+.role-button:focus-visible,
+.login-button:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
 
 /* ========================================
    STUDENT HOME PAGE STYLES
    ======================================== */
 
 /* Home container */
-.student-home-container {
+.home-container {
   min-height: 100vh;
   background-color: #f1f3f4;
   padding-bottom: 80px; /* Space for bottom nav */
@@ -605,7 +615,7 @@ html, body {
 }
 
 /* Header */
-.student-home-header {
+.home-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -614,12 +624,12 @@ html, body {
   border-bottom: 1px solid #f0f0f0;
 }
 
-.student-header-logo {
+.header-logo {
   display: flex;
   align-items: center;
 }
 
-.student-header-logo-text {
+.header-logo-text {
   font-size: 1.75rem;
   font-weight: 800;
   color: #1a1a1a;
@@ -630,18 +640,18 @@ html, body {
   line-height: 1;
 }
 
-.student-header-clock-icon {
+.header-clock-icon {
   font-size: 1.5rem;
   display: inline-block;
 }
 
-.student-header-actions {
+.header-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.student-notification-btn {
+.notification-btn {
   background: none;
   border: none;
   color: #1a1a1a;
@@ -656,7 +666,7 @@ html, body {
   }
 }
 
-.student-profile-picture {
+.profile-picture {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -674,25 +684,25 @@ html, body {
 }
 
 /* Date section */
-.student-date-section {
+.date-section {
   padding: 1.5rem 1.5rem 1rem;
 }
 
-.student-date-title {
+.date-title {
   font-size: 1.5rem;
   font-weight: 700;
   color: #1a1a1a;
   margin-bottom: 0.5rem;
 }
 
-.student-date-subtitle {
+.date-subtitle {
   font-size: 0.95rem;
   color: #666666;
   font-weight: 400;
 }
 
 /* Modules list */
-.student-modules-list {
+.modules-list {
   padding: 0 1.5rem;
   display: flex;
   flex-direction: column;
@@ -773,7 +783,7 @@ html, body {
 }
 
 /* Bottom Navigation */
-.student-bottom-nav {
+.bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
@@ -789,7 +799,7 @@ html, body {
   z-index: 100;
 }
 
-.student-nav-item {
+.nav-item {
   background: none;
   border: none;
   display: flex;
@@ -806,21 +816,21 @@ html, body {
   }
 }
 
-.student-nav-item-active {
+.nav-item-active {
   color: #4ECDC4;
 }
 
-.student-nav-label {
+.nav-label {
   font-size: 0.75rem;
   font-weight: 500;
 }
 
-.student-nav-item-scan {
+.nav-item-scan {
   position: relative;
   margin-top: -1.5rem;
 }
 
-.student-scan-button {
+.scan-button {
   width: 60px;
   height: 60px;
   background: white;
@@ -835,27 +845,27 @@ html, body {
 
 /* Responsive adjustments */
 @media (max-width: 480px) {
-  .student-home-header {
+  .home-header {
     padding: 1rem 1.25rem;
   }
   
-  .student-header-logo-text {
+  .header-logo-text {
     font-size: 1.5rem;
   }
   
-  .student-header-clock-icon {
+  .header-clock-icon {
     font-size: 1.375rem;
   }
   
-  .student-date-section {
+  .date-section {
     padding: 1.25rem 1.25rem 0.75rem;
   }
   
-  .student-date-title {
+  .date-title {
     font-size: 1.375rem;
   }
   
-  .student-modules-list {
+  .modules-list {
     padding: 0 1.25rem;
   }
   
@@ -868,7 +878,7 @@ html, body {
     height: 44px;
   }
   
-  .student-bottom-nav {
+  .bottom-nav {
     padding: 0.625rem 1.25rem;
     padding-bottom: calc(0.625rem + env(safe-area-inset-bottom));
   }
@@ -878,7 +888,7 @@ html, body {
    STUDENT PROFILE PAGE STYLES
    ======================================== */
 
-.student-profile-container {
+.profile-container {
   min-height: 100vh;
   background-color: #f1f3f4;
   position: relative;
@@ -887,7 +897,7 @@ html, body {
 }
 
 /* Profile Header */
-.student-profile-header {
+.profile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -899,8 +909,8 @@ html, body {
   z-index: 100;
 }
 
-.student-back-btn,
-.student-settings-btn {
+.back-btn,
+.settings-btn {
   background: none;
   border: none;
   color: #1a1a1a;
@@ -915,7 +925,7 @@ html, body {
   }
 }
 
-.student-profile-title {
+.profile-title {
   font-size: 1.125rem;
   font-weight: 700;
   color: #1a1a1a;
@@ -923,7 +933,7 @@ html, body {
 }
 
 /* Scrollable Content */
-.student-profile-content {
+.profile-content {
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
@@ -931,19 +941,19 @@ html, body {
 }
 
 /* Profile Avatar Section */
-.student-profile-avatar-section {
+.profile-avatar-section {
   text-align: center;
   padding: 2rem 1.5rem 1.5rem;
 }
 
-.student-profile-avatar-container {
+.profile-avatar-container {
   position: relative;
   width: 120px;
   height: 120px;
   margin: 0 auto 1rem;
 }
 
-.student-profile-avatar-img {
+.profile-avatar-img {
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -952,7 +962,7 @@ html, body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.student-avatar-edit-btn {
+.avatar-edit-btn {
   position: absolute;
   bottom: 4px;
   right: 4px;
@@ -973,14 +983,14 @@ html, body {
   }
 }
 
-.student-profile-name {
+.profile-name {
   font-size: 1.5rem;
   font-weight: 700;
   color: #1a1a1a;
   margin: 0 0 0.25rem 0;
 }
 
-.student-profile-subtitle {
+.profile-subtitle {
   font-size: 0.875rem;
   color: #666666;
   font-weight: 400;
@@ -988,11 +998,11 @@ html, body {
 }
 
 /* Profile Sections */
-.student-profile-section {
+.profile-section {
   margin-bottom: 1.5rem;
 }
 
-.student-section-title {
+.section-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1010,7 +1020,7 @@ html, body {
 }
 
 /* Info Cards */
-.student-info-card {
+.info-card {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -1026,7 +1036,7 @@ html, body {
   }
 }
 
-.student-info-icon {
+.info-icon {
   width: 44px;
   height: 44px;
   border-radius: 0.75rem;
@@ -1041,40 +1051,40 @@ html, body {
   }
 }
 
-.student-info-icon-blue {
+.info-icon-blue {
   background: #E3F2FD;
   color: #2196F3;
 }
 
-.student-info-icon-teal {
+.info-icon-teal {
   background: #E0F7FA;
   color: #00BCD4;
 }
 
-.student-info-icon-cyan {
+.info-icon-cyan {
   background: #E0F2F1;
   color: #4ECDC4;
 }
 
-.student-info-text {
+.info-text {
   flex: 1;
   min-width: 0;
 }
 
-.student-info-label {
+.info-label {
   font-size: 0.75rem;
   color: #999999;
   font-weight: 500;
   margin-bottom: 0.125rem;
 }
 
-.student-info-value {
+.info-value {
   font-size: 0.9375rem;
   color: #1a1a1a;
   font-weight: 600;
 }
 
-.student-info-action-btn {
+.info-action-btn {
   background: none;
   border: none;
   color: #999999;
@@ -1095,7 +1105,7 @@ html, body {
 }
 
 /* Settings Items */
-.student-settings-item {
+.settings-item {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -1120,17 +1130,17 @@ html, body {
   }
 }
 
-.student-settings-item-danger {
-  .student-settings-label {
+.settings-item-danger {
+  .settings-label {
     color: #EF5350;
   }
 
-  .student-settings-arrow {
+  .settings-arrow {
     color: #EF5350;
   }
 }
 
-.student-settings-icon {
+.settings-icon {
   width: 44px;
   height: 44px;
   border-radius: 0.75rem;
@@ -1145,40 +1155,40 @@ html, body {
   }
 }
 
-.student-settings-icon-red {
+.settings-icon-red {
   background: #FFEBEE;
   color: #EF5350;
 }
 
-.student-settings-icon-blue {
+.settings-icon-blue {
   background: #E3F2FD;
   color: #2196F3;
 }
 
-.student-settings-icon-gray {
+.settings-icon-gray {
   background: #F5F5F5;
   color: #9E9E9E;
 }
 
-.student-settings-text {
+.settings-text {
   flex: 1;
   min-width: 0;
 }
 
-.student-settings-label {
+.settings-label {
   font-size: 0.9375rem;
   color: #1a1a1a;
   font-weight: 600;
   margin-bottom: 0.125rem;
 }
 
-.student-settings-desc {
+.settings-desc {
   font-size: 0.8125rem;
   color: #999999;
   font-weight: 400;
 }
 
-.student-settings-arrow {
+.settings-arrow {
   color: #CCCCCC;
   flex-shrink: 0;
 
@@ -1189,13 +1199,13 @@ html, body {
 }
 
 /* Quick Actions Grid */
-.student-quick-actions-grid {
+.quick-actions-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
 }
 
-.student-quick-action-btn {
+.quick-action-btn {
   background: white;
   border: none;
   border-radius: 1rem;
@@ -1223,31 +1233,31 @@ html, body {
   }
 }
 
-.student-quick-action-purple {
+.quick-action-purple {
   svg {
     color: #9C27B0;
   }
 }
 
-.student-quick-action-green {
+.quick-action-green {
   svg {
     color: #4CAF50;
   }
 }
 
-.student-quick-action-orange {
+.quick-action-orange {
   svg {
     color: #FF9800;
   }
 }
 
-.student-quick-action-gray {
+.quick-action-gray {
   svg {
     color: #9E9E9E;
   }
 }
 
-.student-quick-action-label {
+.quick-action-label {
   font-size: 0.8125rem;
   font-weight: 600;
   color: #1a1a1a;
@@ -1256,33 +1266,33 @@ html, body {
 
 /* Responsive adjustments */
 @media (max-width: 480px) {
-  .student-profile-header {
+  .profile-header {
     padding: 1rem 1.25rem;
   }
 
-  .student-profile-content {
+  .profile-content {
     padding: 1.25rem;
   }
 
-  .student-profile-avatar-section {
+  .profile-avatar-section {
     padding: 1.5rem 1rem 1rem;
   }
 
-  .student-profile-avatar-container {
+  .profile-avatar-container {
     width: 100px;
     height: 100px;
   }
 
-  .student-profile-name {
+  .profile-name {
     font-size: 1.25rem;
   }
 
-  .student-quick-actions-grid {
+  .quick-actions-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.625rem;
   }
 
-  .student-quick-action-btn {
+  .quick-action-btn {
     padding: 1.25rem 0.75rem;
   }
 }
@@ -1291,7 +1301,13 @@ html, body {
    STUDENT EDIT PROFILE PAGE STYLES
    ======================================== */
 
-.student-edit-profile-container {
+.content:has(.edit-profile-container) {
+  padding: 0 !important;
+  background-color: #f1f3f4 !important;
+  min-height: 100vh !important;
+}
+
+.edit-profile-container {
   min-height: 100vh;
   background-color: #f1f3f4;
   position: relative;
@@ -1300,7 +1316,7 @@ html, body {
 }
 
 /* Edit Profile Header */
-.student-edit-profile-header {
+.edit-profile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1312,20 +1328,20 @@ html, body {
   z-index: 100;
 }
 
-.student-edit-profile-title {
+.edit-profile-title {
   font-size: 1.125rem;
   font-weight: 700;
   color: #1a1a1a;
   margin: 0;
 }
 
-.student-header-spacer {
+.header-spacer {
   width: 24px;
   height: 24px;
 }
 
 /* Scrollable Content */
-.student-edit-profile-content {
+.edit-profile-content {
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
@@ -1333,19 +1349,19 @@ html, body {
 }
 
 /* Edit Profile Avatar Section */
-.student-edit-profile-avatar-section {
+.edit-profile-avatar-section {
   text-align: center;
   padding: 2rem 1.5rem 1.5rem;
 }
 
-.student-edit-profile-avatar-container {
+.edit-profile-avatar-container {
   position: relative;
   width: 120px;
   height: 120px;
   margin: 0 auto 1rem;
 }
 
-.student-edit-profile-avatar-img {
+.edit-profile-avatar-img {
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -1354,14 +1370,14 @@ html, body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.student-edit-profile-name {
+.edit-profile-name {
   font-size: 1.5rem;
   font-weight: 700;
   color: #1a1a1a;
   margin: 0 0 0.25rem 0;
 }
 
-.student-edit-profile-subtitle {
+.edit-profile-subtitle {
   font-size: 0.875rem;
   color: #666666;
   font-weight: 400;
@@ -1369,11 +1385,11 @@ html, body {
 }
 
 /* Edit Profile Section */
-.student-edit-profile-section {
+.edit-profile-section {
   margin-bottom: 1.5rem;
 }
 
-.student-edit-section-title {
+.edit-section-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1391,7 +1407,7 @@ html, body {
 }
 
 /* Edit Input Groups */
-.student-edit-input-group {
+.edit-input-group {
   position: relative;
   display: flex;
   align-items: center;
@@ -1409,7 +1425,7 @@ html, body {
   }
 }
 
-.student-edit-input-icon {
+.edit-input-icon {
   width: 40px;
   height: 40px;
   border-radius: 0.625rem;
@@ -1425,12 +1441,12 @@ html, body {
   }
 }
 
-.student-edit-icon-teal {
+.edit-icon-teal {
   background: #D1F4F1;
   color: #14b8a6;
 }
 
-.student-edit-input {
+.edit-input {
   flex: 1;
   border: none;
   outline: none;
@@ -1452,7 +1468,7 @@ html, body {
   }
 }
 
-.student-edit-input-action {
+.edit-input-action {
   background: none;
   border: none;
   color: #999999;
@@ -1475,7 +1491,7 @@ html, body {
 }
 
 /* Confirm Button */
-.student-confirm-btn {
+.confirm-btn {
   width: 100%;
   background: #14b8a6;
   color: white;
@@ -1516,28 +1532,28 @@ html, body {
 
 /* Responsive adjustments for edit profile */
 @media (max-width: 480px) {
-  .student-edit-profile-header {
+  .edit-profile-header {
     padding: 1rem 1.25rem;
   }
 
-  .student-edit-profile-content {
+  .edit-profile-content {
     padding: 1.25rem;
   }
 
-  .student-edit-profile-avatar-section {
+  .edit-profile-avatar-section {
     padding: 1.5rem 1rem 1rem;
   }
 
-  .student-edit-profile-avatar-container {
+  .edit-profile-avatar-container {
     width: 100px;
     height: 100px;
   }
 
-  .student-edit-profile-name {
+  .edit-profile-name {
     font-size: 1.25rem;
   }
 
-  .student-edit-input-group {
+  .edit-input-group {
     padding: 0.75rem 0.875rem;
 
     &:focus-within {
@@ -1545,13 +1561,13 @@ html, body {
     }
   }
 
-  .student-edit-input-icon {
+  .edit-input-icon {
     width: 36px;
     height: 36px;
     margin-right: 0.75rem;
   }
 
-  .student-confirm-btn {
+  .confirm-btn {
     padding: 0.875rem 1.25rem;
     font-size: 1rem;
   }
@@ -1560,6 +1576,12 @@ html, body {
 /* ========================================
    STUDENT STATISTICS PAGE STYLES
    ======================================== */
+
+.content:has(.stats-container) {
+  padding: 0 !important;
+  background-color: #f1f3f4 !important;
+  min-height: 100vh !important;
+}
 
 .student-stats-container {
   min-height: 100vh;
@@ -1581,7 +1603,7 @@ html, body {
   z-index: 100;
 }
 
-.student-back-button {
+.back-button {
   background: none;
   border: none;
   color: #1a1a1a;
@@ -1715,6 +1737,82 @@ html, body {
 
 .student-stat-change-positive {
   color: #10B981;
+  font-weight: 500;
+}
+
+/* Chart Container */
+.chart-container {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  margin: 0 1.5rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h2 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+  }
+}
+
+.chart-menu-btn {
+  background: none;
+  border: none;
+  color: #999999;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: #4ECDC4;
+  }
+}
+
+.chart-content {
+  display: flex;
+  gap: 0.75rem;
+  height: 150px;
+  position: relative;
+}
+
+.chart-y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  font-size: 0.75rem;
+  color: #999999;
+  font-weight: 500;
+  min-width: 40px;
+  text-align: right;
+}
+
+.chart-plot {
+  flex: 1;
+  position: relative;
+}
+
+.line-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.chart-x-axis {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+  color: #666666;
   font-weight: 500;
 }
 
@@ -2056,17 +2154,9 @@ html, body {
 
 /* Responsive adjustments for statistics page */
 @media (max-width: 480px) {
-  .student-stats-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  background: white;
-  border-bottom: 1px solid #f0f0f0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
+  .stats-header {
+    padding: 1rem 1.25rem;
+  }
 
   .stats-filters {
     padding: 1rem 1.25rem 0.5rem;
@@ -2078,20 +2168,20 @@ html, body {
     font-size: 0.8125rem;
   }
 
-  .student-stats-cards {
+  .stats-cards {
     padding: 0.875rem 1.25rem;
     gap: 0.875rem;
   }
 
-  .student-stat-card {
+  .stat-card {
     padding: 1rem;
   }
 
-  .student-stat-value {
+  .stat-value {
     font-size: 1.75rem;
   }
 
-  .student-chart-container,
+  .chart-container,
   .bar-chart {
     margin: 0 1.25rem 1.25rem;
     padding: 1rem;
@@ -2116,19 +2206,4 @@ html, body {
   .progress-bar {
     width: 80px;
   }
-}
-
-/* Accessibility improvements */
-@media (prefers-reduced-motion: reduce) {
-  .student-role-button,
-  .student-login-button {
-    transition: none;
-  }
-}
-
-/* Focus visible for better accessibility */
-.student-role-button:focus-visible,
-.student-login-button:focus-visible {
-  outline: 2px solid #4ECDC4;
-  outline-offset: 2px;
 }

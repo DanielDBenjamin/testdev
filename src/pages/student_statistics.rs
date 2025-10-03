@@ -44,19 +44,19 @@ pub fn StudentStatisticsPage() -> impl IntoView {
     ];
 
     view! {
-        <div class="stats-container">
+        <div class="student-stats-container">
             {/* Header */}
-            <header class="stats-header">
+            <header class="student-stats-header">
                 <button class="back-button" on:click=go_to_home>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M19 12H5M12 19l-7-7 7-7"/>
                     </svg>
                 </button>
-                <div class="stats-header-title">
+                <div class="student-stats-header-title">
                     <h1>"Statistics"</h1>
                     <p>"Sarah Johnson"</p>
                 </div>
-                <div class="stats-header-actions">
+                <div class="student-stats-header-actions">
                     <button class="notification-btn">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -86,24 +86,24 @@ pub fn StudentStatisticsPage() -> impl IntoView {
             </div>
 
             {/* Overall stats cards */}
-            <div class="stats-cards">
-                <div class="stat-card stat-card-overall">
-                    <div class="stat-card-header">
-                        <span class="stat-label">"Overall"</span>
-                        <div class="stat-icon stat-icon-green">
+            <div class="student-stats-cards">
+                <div class="student-stat-card">
+                    <div class="student-stat-card-header">
+                        <span class="student-stat-label">"Overall"</span>
+                        <div class="student-stat-icon student-stat-icon-green">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                             </svg>
                         </div>
                     </div>
-                    <div class="stat-value">"94%"</div>
-                    <div class="stat-change stat-change-positive">"+2.1% from last week"</div>
+                    <div class="student-stat-value">"94%"</div>
+                    <div class="student-stat-change student-stat-change-positive">"+2.1% from last week"</div>
                 </div>
 
-                <div class="stat-card stat-card-week">
-                    <div class="stat-card-header">
-                        <span class="stat-label">"This Week"</span>
-                        <div class="stat-icon stat-icon-blue">
+                <div class="student-stat-card">
+                    <div class="student-stat-card-header">
+                        <span class="student-stat-label">"This Week"</span>
+                        <div class="student-stat-icon student-stat-icon-blue">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                 <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -112,16 +112,16 @@ pub fn StudentStatisticsPage() -> impl IntoView {
                             </svg>
                         </div>
                     </div>
-                    <div class="stat-value">"96%"</div>
-                    <div class="stat-change">"4 out of 5 days"</div>
+                    <div class="student-stat-value">"96%"</div>
+                    <div class="student-stat-change">"4 out of 5 days"</div>
                 </div>
             </div>
 
             {/* Weekly Attendance Chart */}
-            <div class="chart-container">
-                <div class="chart-header">
+            <div class="student-chart-container">
+                <div class="student-chart-header">
                     <h2>"Weekly Attendance"</h2>
-                    <button class="chart-menu-btn">
+                    <button class="student-chart-menu-btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="1"></circle>
                             <circle cx="12" cy="5" r="1"></circle>
@@ -129,14 +129,14 @@ pub fn StudentStatisticsPage() -> impl IntoView {
                         </svg>
                     </button>
                 </div>
-                <div class="chart-content">
-                    <div class="chart-y-axis">
+                <div class="student-chart-content">
+                    <div class="student-chart-y-axis">
                         <span>"100%"</span>
                         <span>"50%"</span>
                         <span>"0%"</span>
                     </div>
-                    <div class="chart-plot">
-                        <svg class="line-chart" viewBox="0 0 300 150" preserveAspectRatio="none">
+                    <div class="student-chart-plot">
+                        <svg class="student-line-chart" viewBox="0 0 300 150" preserveAspectRatio="none">
                             <polyline
                                 fill="none"
                                 stroke="#3B82F6"
@@ -151,7 +151,7 @@ pub fn StudentStatisticsPage() -> impl IntoView {
                         </svg>
                     </div>
                 </div>
-                <div class="chart-x-axis">
+                <div class="student-chart-x-axis">
                     {weekly_data.into_iter().map(|(day, _)| {
                         view! {
                             <span>{day}</span>
@@ -285,17 +285,17 @@ pub fn StudentStatisticsPage() -> impl IntoView {
             </div>
 
             {/* Bottom Navigation */}
-            <nav class="bottom-nav">
-                <button class="nav-item" on:click=go_to_home_nav>
+            <nav class="student-bottom-nav">
+                <button class="student-nav-item" on:click=go_to_home_nav>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
-                    <span class="nav-label">"Home"</span>
+                    <span class="student-nav-label">"Home"</span>
                 </button>
 
-                <button class="nav-item nav-item-scan">
-                    <div class="scan-button">
+                <button class="student-nav-item student-nav-item-scan">
+                    <div class="student-scan-button">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="7"></rect>
                             <rect x="14" y="3" width="7" height="7"></rect>
@@ -303,16 +303,16 @@ pub fn StudentStatisticsPage() -> impl IntoView {
                             <rect x="3" y="14" width="7" height="7"></rect>
                         </svg>
                     </div>
-                    <span class="nav-label">"Scan"</span>
+                    <span class="student-nav-label">"Scan"</span>
                 </button>
 
-                <button class="nav-item nav-item-active">
+                <button class="student-nav-item student-nav-item-active">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="20" x2="18" y2="10"></line>
                         <line x1="12" y1="20" x2="12" y2="4"></line>
                         <line x1="6" y1="20" x2="6" y2="14"></line>
                     </svg>
-                    <span class="nav-label">"Stats"</span>
+                    <span class="student-nav-label">"Stats"</span>
                 </button>
             </nav>
         </div>
