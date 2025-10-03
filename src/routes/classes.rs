@@ -4,6 +4,7 @@ use leptos_router::hooks::use_query_map;
 use crate::routes::class_functions::{get_module_classes_fn, delete_class_fn, update_class_status_fn};
 use crate::routes::module_functions::get_module_fn;
 use crate::database::classes::Class;
+use crate::routes::student_functions::get_module_students;
 use leptos::web_sys::window;
 
 #[component]
@@ -42,6 +43,22 @@ pub fn ClassesPage() -> impl IntoView {
         },
     );
 
+    // Load students enrolled in this module
+    let students_resource = Resource::new(
+        move || module_code.get(),
+        |code| async move {
+            if code.is_empty() { return None; }
+            match get_module_students(code).await {
+                Ok(response) if response.success => Some(response.students),
+                _ => None,
+            }
+        },
+    );
+
+    // Local UI state for search and status filter
+    let search_term = RwSignal::new(String::new());
+    let status_filter = RwSignal::new("All".to_string());
+
     // Calculate stats
     let total_classes = Signal::derive(move || {
         classes_resource.get()
@@ -62,6 +79,14 @@ pub fn ClassesPage() -> impl IntoView {
             .and_then(|c| c.as_ref().map(|classes| {
                 classes.iter().filter(|c| c.status == "upcoming").count()
             }))
+            .unwrap_or(0)
+    });
+
+    // Derived count of enrolled students
+    let enrolled_students = Signal::derive(move || {
+        students_resource
+            .get()
+            .and_then(|s| s.as_ref().map(|v| v.len()))
             .unwrap_or(0)
     });
 
@@ -107,7 +132,7 @@ pub fn ClassesPage() -> impl IntoView {
                     <div class="stat-label">"Upcoming"</div>
                 </div>
                 <div class="stat-tile">
-                    <div class="stat-value">"156"</div>
+                    <div class="stat-value">{move || enrolled_students.get().to_string()}</div>
                     <div class="stat-label">"Enrolled Students"</div>
                 </div>
             </div>
@@ -122,8 +147,17 @@ pub fn ClassesPage() -> impl IntoView {
                                         <div class="section-header">
                                             <h3 class="heading">"Classes Schedule"</h3>
                                             <div class="search-controls">
-                                                <input class="input search-input" placeholder="Search classes..." />
-                                                <button class="btn btn-outline">"All Status"</button>
+                                                <input 
+                                                    class="input search-input" 
+                                                    placeholder="Search classes..."
+                                                    bind:value=search_term
+                                                />
+                                                <select class="btn btn-outline" bind:value=status_filter>
+                                                    <option value="All">"All"</option>
+                                                    <option value="Upcoming">"Upcoming"</option>
+                                                    <option value="In Progress">"In Progress"</option>
+                                                    <option value="Completed">"Completed"</option>
+                                                </select>
                                             </div>
                                         </div>
 
@@ -140,9 +174,65 @@ pub fn ClassesPage() -> impl IntoView {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {classes.into_iter().map(|class| {
-                                                        view! { <ClassRow class=class/> }
-                                                    }).collect_view()}
+                                                    {
+                                                        // Build a derived filtered list that reacts to search + status
+                                                        let filtered_classes = {
+                                                            let classes_cloned = classes.clone();
+                                                            Signal::derive(move || {
+                                                                let query = search_term.get().to_lowercase();
+                                                                let status = status_filter.get();
+                                                                let status_token: Option<&'static str> = match status.as_str() {
+                                                                    "Upcoming" => Some("upcoming"),
+                                                                    "In Progress" => Some("in_progress"),
+                                                                    "Completed" => Some("completed"),
+                                                                    _ => None,
+                                                                };
+
+                                                                classes_cloned
+                                                                    .iter()
+                                                                    .cloned()
+                                                                    .filter(|c| {
+                                                                        let matches_search = if query.trim().is_empty() {
+                                                                            true
+                                                                        } else {
+                                                                            let q = query.as_str();
+                                                                            c.title.to_lowercase().contains(q)
+                                                                                || c.module_code.to_lowercase().contains(q)
+                                                                                || c.date.to_lowercase().contains(q)
+                                                                                || c.time.to_lowercase().contains(q)
+                                                                                || c.status.replace('_', " ").to_lowercase().contains(q)
+                                                                                || c.venue.as_deref().unwrap_or("").to_lowercase().contains(q)
+                                                                                || c.description.as_deref().unwrap_or("").to_lowercase().contains(q)
+                                                                        };
+                                                                        let matches_status = match status_token {
+                                                                            Some(tok) => c.status == tok,
+                                                                            None => true,
+                                                                        };
+                                                                        matches_search && matches_status
+                                                                    })
+                                                                    .collect::<Vec<_>>()
+                                                            })
+                                                        };
+
+                                                        view! {
+                                                            <Show
+                                                                when=move || !filtered_classes.get().is_empty()
+                                                                fallback=move || view! {
+                                                                    <tr>
+                                                                        <td colspan="6" style="text-align:center; padding:16px;" class="muted">
+                                                                            {"No classes match your filters"}
+                                                                        </td>
+                                                                    </tr>
+                                                                }
+                                                            >
+                                                                {move || filtered_classes.get()
+                                                                    .into_iter()
+                                                                    .map(|class| view! { <ClassRow class=class/> })
+                                                                    .collect_view()
+                                                                }
+                                                            </Show>
+                                                        }
+                                                    }
                                                 </tbody>
                                             </table>
                                         </div>
@@ -275,7 +365,7 @@ fn ClassRow(class: Class) -> impl IntoView {
                 <td>
                     <div class="class-cell">
                         <div class="class-title">{class.title.clone()}</div>
-                        <div class="class-subtitle">"Week 1 • Lecture 1"</div>
+                        
                     </div>
                 </td>
                 <td>
@@ -286,13 +376,13 @@ fn ClassRow(class: Class) -> impl IntoView {
                 <td>
                     <div class="time-cell">
                         <div>{class.time.clone()}</div>
-                        <div class="duration">"90 minutes"</div>
+                        
                     </div>
                 </td>
                 <td>
                     <div class="venue-cell">
                         <div>{class.venue.clone().unwrap_or_else(|| "TBA".to_string())}</div>
-                        <div class="building">"Building A"</div>
+                        
                     </div>
                 </td>
                 <td>
