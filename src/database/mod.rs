@@ -12,6 +12,7 @@ pub mod auth;
 
 pub mod modules;
 pub mod classes;
+pub mod class_sessions;
 
 #[cfg(feature = "ssr")]
 pub use connection::*;
@@ -27,6 +28,7 @@ pub use auth::*;
 
 pub use modules::*;
 pub use classes::*;
+pub use class_sessions::*;
 
 #[cfg(feature = "ssr")]
 pub use auth::print_test_hash;

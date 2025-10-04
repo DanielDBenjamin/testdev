@@ -767,3 +767,23 @@ pub async fn get_student_module_attendance_detail(
         status: status_opt.unwrap_or_else(|| "absent".to_string()),
     }).collect())
 }
+
+// Enrollment count for a module (number of students in module_students)
+#[server(GetModuleEnrollmentCount, "/api")]
+pub async fn get_module_enrollment_count(
+    module_code: String,
+) -> Result<i64, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM module_students WHERE moduleCode = ?"
+    )
+    .bind(&module_code)
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(0);
+
+    Ok(count)
+}

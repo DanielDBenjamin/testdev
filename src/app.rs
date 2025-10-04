@@ -7,7 +7,7 @@ use leptos_router::{
 };
 use crate::routes::{
     About, ClassesPage, Error, HomePage, Login, NewClass, NewModule, Profile, Register, Statistics,
-    Timetable, EditClass, EditModule
+    Timetable, EditClass, EditModule, ClassQrPage, ClassQrFullscreenPage
 };
 use crate::components::{NavBar, TopBar};
 use crate::pages::{ StudentHomePage, StudentLoginPage, RolePage, StudentProfilePage, StudentEditProfilePage, StudentStatisticsPage };
@@ -99,6 +99,8 @@ fn AppShell() -> impl IntoView {
                     <Route path=StaticSegment("about") view=About/>
                     <Route path=(StaticSegment("lecturer"), StaticSegment("profile")) view=Profile/>
                     <Route path=(StaticSegment("classes"), StaticSegment("edit")) view=EditClass/>
+                    <Route path=(StaticSegment("classes"), StaticSegment("qr")) view=ClassQrPage/>
+                    <Route path=(StaticSegment("classes"), StaticSegment("qr"), StaticSegment("large")) view=ClassQrFullscreenPage/>
                     // add student pages
                     <Route path=(StaticSegment("student"), StaticSegment("home")) view=StudentHomePage/>
                     <Route path=(StaticSegment("student"), StaticSegment("login")) view=StudentLoginPage/>
@@ -106,7 +108,6 @@ fn AppShell() -> impl IntoView {
                     <Route path=(StaticSegment("student"), StaticSegment("profile")) view=StudentProfilePage/>
                     <Route path=(StaticSegment("student"), StaticSegment("profile"), StaticSegment("edit")) view=StudentEditProfilePage/>
                     <Route path=(StaticSegment("student"), StaticSegment("statistics")) view=StudentStatisticsPage/>
-
                 </Routes>
             </main>
             <Show when=move || show_footer.get()>

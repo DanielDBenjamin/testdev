@@ -1,10 +1,12 @@
 use leptos::prelude::*;
-use crate::database::classes::{ Class, CreateClassRequest, UpdateClassRequest };
+use crate::database::classes::{Class, CreateClassRequest, UpdateClassRequest};
+use crate::database::class_sessions::ClassSession;
 use gloo_net::http::Request;
+
 #[cfg(feature = "ssr")]
-use crate::database::{init_db_pool, classes::{create_class, get_module_classes, get_lecturer_classes, delete_class, update_class}};
+use crate::database::{init_db_pool, classes::{create_class, get_module_classes, get_lecturer_classes, delete_class, update_class, get_class_by_id}, class_sessions::{create_session, end_session, get_active_session, get_session_by_id}};
 #[cfg(feature = "ssr")]
-use chrono::{NaiveDate, Duration};
+use chrono::{NaiveDate, NaiveTime, Local, Duration as ChronoDuration, Utc, DateTime};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ClassResponse {
@@ -20,6 +22,66 @@ pub struct ClassesListResponse {
     pub classes: Vec<Class>,
 }
 
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct ClassSessionResponse {
+    pub success: bool,
+    pub message: String,
+    pub session: Option<ClassSession>,
+    pub class_status: Option<String>,
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct RecordAttendanceResponse {
+    pub success: bool,
+    pub message: String,
+}
+
+#[cfg(feature = "ssr")]
+async fn ensure_session_state(pool: &sqlx::SqlitePool, class_id: i64) -> Result<Option<ClassSession>, String> {
+    let class = get_class_by_id(pool, class_id).await?;
+    let date = NaiveDate::parse_from_str(&class.date, "%Y-%m-%d").map_err(|e| format!("Invalid class date: {}", e))?;
+    let time = NaiveTime::parse_from_str(&class.time, "%H:%M").map_err(|e| format!("Invalid class time: {}", e))?;
+    let start_naive = date.and_time(time);
+    let duration_minutes = class.duration_minutes.max(15) as i64;
+    let now_naive = Local::now().naive_local();
+
+    let mut session = get_active_session(pool, class_id).await?;
+
+    if session.is_none() && now_naive >= start_naive {
+        let new_session = create_session(pool, class_id, None).await?;
+        let now_utc = Utc::now().to_rfc3339();
+        sqlx::query("UPDATE classes SET status = 'in_progress', updated_at = ? WHERE classID = ?")
+            .bind(&now_utc)
+            .bind(class_id)
+            .execute(pool)
+            .await
+            .map_err(|e| format!("Failed to update class status: {}", e))?;
+        session = Some(new_session);
+    }
+
+    if let Some(existing) = session.clone() {
+        if existing.ended_at.is_none() {
+            let started_naive = DateTime::parse_from_rfc3339(&existing.started_at)
+                .map(|dt| dt.with_timezone(&Local).naive_local())
+                .unwrap_or(start_naive);
+            let expected_end = started_naive + ChronoDuration::minutes(duration_minutes);
+            if now_naive >= expected_end {
+                end_session(pool, existing.session_id).await?;
+                let now_utc = Utc::now().to_rfc3339();
+                sqlx::query("UPDATE classes SET status = 'completed', updated_at = ? WHERE classID = ?")
+                    .bind(&now_utc)
+                    .bind(class_id)
+                    .execute(pool)
+                    .await
+                    .map_err(|e| format!("Failed to update class status: {}", e))?;
+                session = None;
+            }
+        }
+    }
+
+    Ok(session)
+}
+
 /// Create a new class (with optional recurring pattern)
 #[server(CreateClass, "/api")]
 pub async fn create_class_fn(
@@ -30,6 +92,7 @@ pub async fn create_class_fn(
     recurring: Option<String>,
     date: String,
     time: String,
+    duration_minutes: i32,
     recurrence_count: Option<i32>, // How many instances to create
 ) -> Result<ClassResponse, ServerFnError> {
     // Add logging
@@ -47,6 +110,14 @@ pub async fn create_class_fn(
         return Ok(ClassResponse {
             success: false,
             message: "Date and time are required".to_string(),
+            class: None,
+        });
+    }
+
+    if duration_minutes <= 0 {
+        return Ok(ClassResponse {
+            success: false,
+            message: "Please choose a valid duration".to_string(),
             class: None,
         });
     }
@@ -79,6 +150,7 @@ pub async fn create_class_fn(
         recurring: recurring.clone().filter(|s| !s.trim().is_empty() && s != "No repeat"),
         date: date.clone(),
         time: time.clone(),
+        duration_minutes,
     };
 
     // Create the first class
@@ -102,15 +174,15 @@ pub async fn create_class_fn(
             // Parse the start date
             if let Ok(start_date) = NaiveDate::parse_from_str(&date, "%Y-%m-%d") {
                 let interval = match recur_pattern.as_str() {
-                    "Daily" => Duration::days(1),
-                    "Weekly" => Duration::weeks(1),
-                    "Monthly" => Duration::days(30), // Approximate
-                    _ => Duration::weeks(1), // Default to weekly
+                    "Daily" => ChronoDuration::days(1),
+                    "Weekly" => ChronoDuration::weeks(1),
+                    "Monthly" => ChronoDuration::days(30), // Approximate
+                    _ => ChronoDuration::weeks(1), // Default to weekly
                 };
 
                 // Create additional class instances
                 for i in 1..count {
-                    let next_date = start_date + (interval * i);
+                    let next_date = start_date + (interval * (i as i32));
                     let next_date_str = next_date.format("%Y-%m-%d").to_string();
                     
                     let recurring_request = CreateClassRequest {
@@ -121,6 +193,7 @@ pub async fn create_class_fn(
                         recurring: Some(recur_pattern.clone()),
                         date: next_date_str,
                         time: time.clone(),
+                        duration_minutes,
                     };
 
                     // Create each recurring instance
@@ -255,6 +328,7 @@ pub async fn update_class_fn(
     description: Option<String>,
     date: String,
     time: String,
+    duration_minutes: i32,
     venue: Option<String>,
     recurring: Option<String>,
 ) -> Result<ClassResponse, ServerFnError> {
@@ -274,6 +348,14 @@ pub async fn update_class_fn(
         });
     }
 
+    if duration_minutes <= 0 {
+        return Ok(ClassResponse {
+            success: false,
+            message: "Please choose a valid duration".to_string(),
+            class: None,
+        });
+    }
+
     let pool = init_db_pool().await.map_err(|e| {
         ServerFnError::new(format!("Database connection failed: {}", e))
     })?;
@@ -283,7 +365,7 @@ pub async fn update_class_fn(
         description: description.filter(|s| !s.trim().is_empty()),
         date: date.trim().to_string(),
         time: time.trim().to_string(),
-        duration: 60,
+        duration_minutes,
         venue: venue.filter(|s| !s.trim().is_empty()),
         recurring: recurring.filter(|s| !s.trim().is_empty()),
     };
@@ -360,6 +442,7 @@ pub async fn rewrite_recurring_series_fn(
     new_venue: Option<String>,
     new_date: String,
     new_time: String,
+    new_duration_minutes: i32,
     new_recurring: Option<String>,
     new_recurrence_count: Option<i32>,
 ) -> Result<ClassResponse, ServerFnError> {
@@ -399,7 +482,7 @@ pub async fn rewrite_recurring_series_fn(
         description: new_description.clone(),
         date: new_date.clone(),
         time: new_time.clone(),
-        duration: 60,
+        duration_minutes: new_duration_minutes,
         venue: new_venue.clone(),
         recurring: new_recurring.clone(),
     };
@@ -436,10 +519,10 @@ pub async fn rewrite_recurring_series_fn(
         if target_total > 1 {
             if let Ok(start_date) = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d") {
                 let interval = match recur.as_str() {
-                    "Daily" => Duration::days(1),
-                    "Weekly" => Duration::weeks(1),
-                    "Monthly" => Duration::days(30),
-                    _ => Duration::weeks(1),
+                    "Daily" => ChronoDuration::days(1),
+                    "Weekly" => ChronoDuration::weeks(1),
+                    "Monthly" => ChronoDuration::days(30),
+                    _ => ChronoDuration::weeks(1),
                 };
 
                 for i in 1..target_total {
@@ -454,6 +537,7 @@ pub async fn rewrite_recurring_series_fn(
                         recurring: new_recurring.clone(),
                         date: next_date_str,
                         time: new_time.clone(),
+                        duration_minutes: new_duration_minutes,
                     };
 
                     match create_class(&pool, req).await {
@@ -528,6 +612,104 @@ pub async fn update_class_status_fn(
     })
 }
 
+#[server(StartClassSession, "/api")]
+pub async fn start_class_session_fn(
+    class_id: i64,
+) -> Result<ClassSessionResponse, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+
+    match create_session(&pool, class_id, None).await {
+        Ok(session) => {
+            let now = Utc::now().to_rfc3339();
+            sqlx::query("UPDATE classes SET status = 'in_progress', updated_at = ? WHERE classID = ?")
+                .bind(&now)
+                .bind(class_id)
+                .execute(&pool)
+                .await
+                .map_err(|e| ServerFnError::new(format!("Failed to update class status: {}", e)))?;
+
+            Ok(ClassSessionResponse {
+                success: true,
+                message: "Session started".to_string(),
+                session: Some(session),
+                class_status: Some("in_progress".to_string()),
+            })
+        }
+        Err(e) => Ok(ClassSessionResponse {
+            success: false,
+            message: e,
+            session: None,
+            class_status: None,
+        }),
+    }
+}
+
+#[server(EndClassSession, "/api")]
+pub async fn end_class_session_fn(
+    session_id: i64,
+) -> Result<ClassSessionResponse, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+
+    match end_session(&pool, session_id).await {
+        Ok(session) => {
+            let now = Utc::now().to_rfc3339();
+            sqlx::query("UPDATE classes SET status = 'completed', updated_at = ? WHERE classID = ?")
+                .bind(&now)
+                .bind(session.class_id)
+                .execute(&pool)
+                .await
+                .map_err(|e| ServerFnError::new(format!("Failed to update class status: {}", e)))?;
+
+            Ok(ClassSessionResponse {
+                success: true,
+                message: "Session ended".to_string(),
+                session: Some(session),
+                class_status: Some("completed".to_string()),
+            })
+        }
+        Err(e) => Ok(ClassSessionResponse {
+            success: false,
+            message: e,
+            session: None,
+            class_status: None,
+        }),
+    }
+}
+
+#[server(GetActiveClassSession, "/api")]
+pub async fn get_active_class_session_fn(
+    class_id: i64,
+) -> Result<ClassSessionResponse, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+
+    let session = ensure_session_state(&pool, class_id).await.map_err(|e| ServerFnError::new(e))?;
+    let class_status = get_class_by_id(&pool, class_id)
+        .await
+        .map(|c| c.status)
+        .unwrap_or_else(|_| "upcoming".to_string());
+
+    match session {
+        Some(session) => Ok(ClassSessionResponse {
+            success: true,
+            message: "Active session found".to_string(),
+            session: Some(session),
+            class_status: Some(class_status),
+        }),
+        None => Ok(ClassSessionResponse {
+            success: false,
+            message: "No active session".to_string(),
+            session: None,
+            class_status: Some(class_status),
+        }),
+    }
+}
+
 // Helper function to save a single instance
 pub async fn save_single_instance(
     class_id: i32,
@@ -581,4 +763,120 @@ pub async fn save_recurring_series(
             error_text
         )))
     }
+}
+
+
+#[server(RecordSessionAttendance, "/api")]
+pub async fn record_session_attendance_fn(
+    payload: String,
+    student_email: String,
+) -> Result<RecordAttendanceResponse, ServerFnError> {
+    let pool = init_db_pool().await.map_err(|e| {
+        ServerFnError::new(format!("Database connection failed: {}", e))
+    })?;
+
+    let parts: Vec<&str> = payload.split(':').collect();
+    if parts.len() != 4 || parts[0] != "session" || parts[2] != "class" {
+        return Ok(RecordAttendanceResponse {
+            success: false,
+            message: "Invalid QR code".to_string(),
+        });
+    }
+
+    let session_id: i64 = parts[1].parse().map_err(|_| ServerFnError::new("Invalid session id"))?;
+    let class_id: i64 = parts[3].parse().map_err(|_| ServerFnError::new("Invalid class id"))?;
+
+    let _ = ensure_session_state(&pool, class_id).await.map_err(|e| ServerFnError::new(e))?;
+
+    let session = match get_session_by_id(&pool, session_id).await {
+        Ok(Some(session)) => session,
+        Ok(None) => {
+            return Ok(RecordAttendanceResponse {
+                success: false,
+                message: "Session not found".to_string(),
+            })
+        }
+        Err(e) => {
+            return Ok(RecordAttendanceResponse {
+                success: false,
+                message: e,
+            })
+        }
+    };
+
+    if session.ended_at.is_some() {
+        return Ok(RecordAttendanceResponse {
+            success: false,
+            message: "Session has ended".to_string(),
+        });
+    }
+
+    if session.class_id != class_id {
+        return Ok(RecordAttendanceResponse {
+            success: false,
+            message: "Session mismatch".to_string(),
+        });
+    }
+
+    if student_email.trim().is_empty() {
+        return Ok(RecordAttendanceResponse {
+            success: false,
+            message: "Missing student email".to_string(),
+        });
+    }
+
+    let student_id: Option<i64> = sqlx::query_scalar(
+        "SELECT userID FROM users WHERE emailAddress = ? AND role = 'student'"
+    )
+    .bind(&student_email)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| ServerFnError::new(format!("Failed to lookup student: {}", e)))?;
+
+    let student_id = match student_id {
+        Some(id) => id,
+        None => {
+            return Ok(RecordAttendanceResponse {
+                success: false,
+                message: "Student not found".to_string(),
+            })
+        }
+    };
+
+    let now = Utc::now().to_rfc3339();
+
+    let existing: Option<i64> = sqlx::query_scalar(
+        "SELECT attendanceID FROM attendance WHERE classID = ? AND studentID = ?"
+    )
+    .bind(class_id)
+    .bind(student_id)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| ServerFnError::new(format!("Failed to check attendance: {}", e)))?;
+
+    if let Some(attendance_id) = existing {
+        sqlx::query(
+            "UPDATE attendance SET status = 'present', recorded_at = ?, notes = NULL WHERE attendanceID = ?"
+        )
+        .bind(&now)
+        .bind(attendance_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to update attendance: {}", e)))?;
+    } else {
+        sqlx::query(
+            "INSERT INTO attendance (studentID, classID, status, recorded_at, notes) VALUES (?, ?, 'present', ?, NULL)"
+        )
+        .bind(student_id)
+        .bind(class_id)
+        .bind(&now)
+        .execute(&pool)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to insert attendance: {}", e)))?;
+    }
+
+    Ok(RecordAttendanceResponse {
+        success: true,
+        message: "Attendance recorded".to_string(),
+    })
 }

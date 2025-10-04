@@ -2,15 +2,20 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 use leptos_router::components::A;
 use leptos_router::hooks::{use_navigate, use_query_map};
-use crate::routes::class_functions::{get_class_fn, update_class_fn, rewrite_recurring_series_fn};
+use crate::routes::class_functions::{get_class_fn, update_class_fn, rewrite_recurring_series_fn, delete_class_fn};
+use crate::routes::helpers::build_return_path;
 
 #[component]
 pub fn EditClass() -> impl IntoView {
     let navigate = use_navigate();
     let query = use_query_map();
-    
+    let query_for_id = query.clone();
     let class_id = Signal::derive(move || {
-        query.with(|q| q.get("id").and_then(|id| id.parse::<i64>().ok()).unwrap_or(0))
+        query_for_id.with(|q| q.get("id").and_then(|id| id.parse::<i64>().ok()).unwrap_or(0))
+    });
+    let query_for_origin = query.clone();
+    let origin = Signal::derive(move || {
+        query_for_origin.with(|q| q.get("origin").map(|s| s.to_string()))
     });
     
     let title = RwSignal::new(String::new());
@@ -22,11 +27,20 @@ pub fn EditClass() -> impl IntoView {
     let date = RwSignal::new(String::new());
     let hour = RwSignal::new("10".to_string());
     let minute = RwSignal::new("00".to_string());
+    let duration = RwSignal::new("90".to_string());
     let message = RwSignal::new(String::new());
     let success = RwSignal::new(false);
     let class_title_display = RwSignal::new(String::new());
     let original_title = RwSignal::new(String::new());
     let module_code = RwSignal::new(String::new());
+
+    let module_code_for_return = module_code.clone();
+    let origin_for_return = origin.clone();
+    let return_path = Signal::derive(move || {
+        let origin_val = origin_for_return.get();
+        let module_val = module_code_for_return.get();
+        build_return_path(origin_val, &module_val)
+    });
     
     // Load class data
     let class_resource = Resource::new(
@@ -62,6 +76,43 @@ pub fn EditClass() -> impl IntoView {
                 hour.set(parts[0].to_string());
                 minute.set(parts[1].to_string());
             }
+
+            duration.set(class.duration_minutes.max(15).to_string());
+        }
+    });
+
+    let delete_modal_visible = RwSignal::new(false);
+
+    // Delete class action
+    let delete_action = Action::new(move |id: &i64| {
+        let id = *id;
+        async move { delete_class_fn(id).await }
+    });
+
+    Effect::new({
+        let nav = navigate.clone();
+        let return_path = return_path.clone();
+        let message = message.clone();
+        let success = success.clone();
+        let delete_modal_visible = delete_modal_visible.clone();
+        move |_| {
+            if let Some(result) = delete_action.value().get() {
+                match result {
+                    Ok(response) => {
+                        message.set(response.message.clone());
+                        success.set(response.success);
+                        if response.success {
+                            delete_modal_visible.set(false);
+                            let dest = return_path.get();
+                            nav(&dest, Default::default());
+                        }
+                    }
+                    Err(e) => {
+                        message.set(format!("Error: {}", e));
+                        success.set(false);
+                    }
+                }
+            }
         }
     });
 
@@ -93,6 +144,8 @@ pub fn EditClass() -> impl IntoView {
         let count_val = if recurring.get() != "No repeat" {
             recurrence_count.get().parse::<i32>().ok()
         } else { None };
+        let return_to = return_path.get();
+        let duration_minutes = duration.get().parse::<i32>().unwrap_or(90).max(15);
 
         spawn_local(async move {
             // If recurrence pattern changed, rewrite the series; otherwise update just this class
@@ -109,6 +162,7 @@ pub fn EditClass() -> impl IntoView {
                     venue_val.clone(),
                     current_date.clone(),
                     time_str.clone(),
+                    duration_minutes,
                     recurring_val.clone(),
                     count_val,
                 ).await
@@ -119,6 +173,7 @@ pub fn EditClass() -> impl IntoView {
                     desc_val,
                     current_date,
                     time_str,
+                    duration_minutes,
                     venue_val,
                     recurring_val,
                 ).await
@@ -131,7 +186,8 @@ pub fn EditClass() -> impl IntoView {
                     if response.success {
                         set_timeout(
                             move || {
-                                nav(&format!("/classes?module={}", mod_code), Default::default());
+                                let dest = return_to.clone();
+                                nav(&dest, Default::default());
                             },
                             std::time::Duration::from_millis(1000),
                         );
@@ -148,7 +204,7 @@ pub fn EditClass() -> impl IntoView {
     view! {
         <section class="edit-class">
             <div class="header-content">
-                <A href=move || format!("/classes?module={}", module_code.get()) attr:class="link">"←"</A>
+                <A href=move || return_path.get() attr:class="link">"←"</A>
                 <div class="header-text">
                     <h1 class="page-title">"Edit Class: " {move || class_title_display.get()}</h1>
                 </div>
@@ -236,6 +292,16 @@ pub fn EditClass() -> impl IntoView {
                                                 <div class="t-label">"Minute"</div>
                                             </div>
                                         </div>
+
+                                        <label class="label" style="margin-top:16px;">"Duration"</label>
+                                        <select class="input" bind:value=duration>
+                                            <option value="45">"45 minutes"</option>
+                                            <option value="60">"1 hour"</option>
+                                            <option value="75">"1 hour 15 min"</option>
+                                            <option value="90">"1 hour 30 min"</option>
+                                            <option value="105">"1 hour 45 min"</option>
+                                            <option value="120">"2 hours"</option>
+                                        </select>
                                     </aside>
                                 </div>
 
@@ -247,9 +313,31 @@ pub fn EditClass() -> impl IntoView {
 
                                 <div class="actions-row">
                                     <button class="btn btn-accent" on:click=on_submit>"✓ Save Class"</button>
-                                    <button class="btn btn-primary">"⚡ Start Session"</button>
-                                    <A href=move || format!("/classes?module={}", module_code.get()) attr:class="btn btn-outline">"✕ Cancel"</A>
+                                    <button
+                                        class="btn btn-danger"
+                                        disabled=move || delete_action.pending().get()
+                                        on:click=move |_| delete_modal_visible.set(true)
+                                    >"Delete Class"</button>
+                                    <A href=move || return_path.get() attr:class="btn btn-outline">"✕ Cancel"</A>
                                 </div>
+                                <Show when=move || delete_modal_visible.get()>
+                                    <div class="modal-overlay" on:click=move |_| delete_modal_visible.set(false)>
+                                        <div class="modal-content" on:click=|e| e.stop_propagation()>
+                                            <h2 class="modal-title">"Delete Class"</h2>
+                                            <p class="modal-text">{format!("Are you sure you want to delete \"{}\"?", class_title_display.get())}</p>
+                                            <div class="modal-actions">
+                                                <button class="btn btn-outline" on:click=move |_| delete_modal_visible.set(false)>"Cancel"</button>
+                                                <button
+                                                    class="btn btn-danger"
+                                                    disabled=move || delete_action.pending().get()
+                                                    on:click=move |_| {
+                                                        delete_action.dispatch(class_id.get());
+                                                    }
+                                                >{move || if delete_action.pending().get() { "Deleting..." } else { "Delete" }}</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Show>
                             </div>
                         }.into_any()
                     })

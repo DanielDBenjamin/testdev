@@ -1,5 +1,8 @@
 use leptos::prelude::*;
+use leptos::task::spawn_local;
 use crate::components::QrScanner;
+use crate::user_context::get_current_user;
+use crate::routes::class_functions::record_session_attendance_fn;
 use leptos_router::hooks::use_navigate;
 
 #[component]
@@ -7,6 +10,8 @@ pub fn StudentHomePage() -> impl IntoView {
     let navigate = use_navigate();
     let (show_scanner, set_show_scanner) = signal(false);
     let (_scanned_data, set_scanned_data) = signal(None::<String>);
+    let feedback = RwSignal::new(None::<(bool, String)>);
+    let current_user = get_current_user();
 
     // Mock data for modules - replace with real data later
     let modules = vec![
@@ -15,12 +20,33 @@ pub fn StudentHomePage() -> impl IntoView {
         ("13:00", "CHEM 201", "OrgChem 222", "yellow", "⚗️"),
     ];
 
-    let handle_scan = Callback::new(move |data: String| {
-        set_scanned_data.set(Some(data.clone()));
-        set_show_scanner.set(false);
-        // TODO: Process the scanned QR code data here
-        leptos::logging::log!("Scanned QR code: {}", data);
-    });
+    let handle_scan = {
+        let set_scanned_data = set_scanned_data.clone();
+        let set_show_scanner = set_show_scanner.clone();
+        let feedback = feedback.clone();
+        let current_user = current_user.clone();
+        Callback::new(move |data: String| {
+            set_scanned_data.set(Some(data.clone()));
+            set_show_scanner.set(false);
+            if let Some(user) = current_user.get() {
+                let email = user.email_address.clone();
+                let feedback = feedback.clone();
+                let payload = data.clone();
+                spawn_local(async move {
+                    match record_session_attendance_fn(payload, email).await {
+                        Ok(resp) => {
+                            feedback.set(Some((resp.success, resp.message)));
+                        }
+                        Err(e) => {
+                            feedback.set(Some((false, e.to_string())));
+                        }
+                    }
+                });
+            } else {
+                feedback.set(Some((false, "Please log in as a student to record attendance.".to_string())));
+            }
+        })
+    };
 
     let handle_close_scanner = Callback::new(move |_| {
         set_show_scanner.set(false);
@@ -82,6 +108,11 @@ pub fn StudentHomePage() -> impl IntoView {
                     }
                 }).collect::<Vec<_>>()}
             </div>
+
+            {move || feedback.get().map(|(ok, msg)| {
+                let class_name = if ok { "student-feedback success" } else { "student-feedback error" };
+                view! { <div class=class_name>{msg}</div> }.into_any()
+            }).unwrap_or_else(|| view! { <></> }.into_any())}
 
             {/* Bottom Navigation */}
             <nav class="student-bottom-nav">

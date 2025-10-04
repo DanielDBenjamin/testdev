@@ -2132,3 +2132,43 @@ html, body {
   outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
+.student-feedback {
+  margin: 16px 0;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+.student-feedback.success {
+  background: #dcfce7;
+  color: #047857;
+}
+.student-feedback.error {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.link-button {
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.link-button.accent:hover {
+  opacity: 0.85;
+}
+
+.reset-inline {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

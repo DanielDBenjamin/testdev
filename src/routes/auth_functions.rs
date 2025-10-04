@@ -1,6 +1,6 @@
 #[cfg(feature = "ssr")]
-use crate::database::{init_db_pool, create_user, authenticate_user, CreateUserRequest};
-use crate::types::{RegisterData, LoginData, AuthResponse};
+use crate::database::{init_db_pool, create_user, authenticate_user, update_user_password_by_email, CreateUserRequest};
+use crate::types::{RegisterData, LoginData, AuthResponse, ResetPasswordData, BasicResponse};
 use leptos::prelude::*;
 
 #[server(RegisterUser, "/api")]
@@ -118,6 +118,43 @@ pub async fn login_user(data: LoginData) -> Result<AuthResponse, ServerFnError> 
             success: false,
             message: e,
             user: None,
+        }),
+    }
+}
+
+#[server(ResetPassword, "/api")]
+pub async fn reset_password_fn(data: ResetPasswordData) -> Result<BasicResponse, ServerFnError> {
+    if data.email.trim().is_empty() {
+        return Ok(BasicResponse {
+            success: false,
+            message: "Email is required".to_string(),
+        });
+    }
+
+    if data.new_password.len() < 6 {
+        return Ok(BasicResponse {
+            success: false,
+            message: "Password must be at least 6 characters".to_string(),
+        });
+    }
+
+    if data.new_password != data.confirm_password {
+        return Ok(BasicResponse {
+            success: false,
+            message: "Passwords do not match".to_string(),
+        });
+    }
+
+    let pool = init_db_pool().await.map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
+
+    match update_user_password_by_email(&pool, &data.email.trim().to_lowercase(), &data.new_password).await {
+        Ok(_) => Ok(BasicResponse {
+            success: true,
+            message: "Password updated successfully. You can now sign in with your new password.".to_string(),
+        }),
+        Err(e) => Ok(BasicResponse {
+            success: false,
+            message: e,
         }),
     }
 }

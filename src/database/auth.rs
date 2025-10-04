@@ -124,7 +124,7 @@ pub async fn get_user_by_id(pool: &SqlitePool, user_id: i64) -> Result<Option<Us
 #[cfg(feature = "ssr")]
 pub async fn get_user_by_email(pool: &SqlitePool, email: &str) -> Result<Option<UserProfile>, String> {
     let user = sqlx::query_as::<_, User>(
-        "SELECT * FROM users WHERE userID = ?"
+        "SELECT * FROM users WHERE emailAddress = ?"
     )
     .bind(email)
     .fetch_optional(pool)
@@ -142,4 +142,24 @@ pub fn print_test_hash() {
     println!("Password: {}", password);
     println!("Hash: {}", hash);
     println!("=================================\n");
+}
+#[cfg(feature = "ssr")]
+pub async fn update_user_password_by_email(pool: &SqlitePool, email: &str, new_password: &str) -> Result<(), String> {
+    let hashed = hash_password(new_password);
+    let now = Utc::now().to_rfc3339();
+    let result = sqlx::query(
+        "UPDATE users SET password = ?, updated_at = ? WHERE emailAddress = ?"
+    )
+    .bind(&hashed)
+    .bind(&now)
+    .bind(&email.to_lowercase())
+    .execute(pool)
+    .await
+    .map_err(|e| format!("Failed to update password: {}", e))?;
+
+    if result.rows_affected() == 0 {
+        return Err("No user found with that email".to_string());
+    }
+
+    Ok(())
 }

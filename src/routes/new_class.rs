@@ -16,6 +16,7 @@ pub fn NewClass() -> impl IntoView {
     let date = RwSignal::new(String::new());
     let hour = RwSignal::new("10".to_string());
     let minute = RwSignal::new("00".to_string());
+    let duration = RwSignal::new("90".to_string());
     let message = RwSignal::new(String::new());
     let success = RwSignal::new(false);
     
@@ -24,7 +25,7 @@ pub fn NewClass() -> impl IntoView {
         query.with(|q| q.get("module").unwrap_or_default())
     };
     
-    let create_action = Action::new(move |(module, title_val, venue_val, desc_val, recurring_val, date_val, time_val, count): &(String, String, Option<String>, Option<String>, Option<String>, String, String, Option<i32>)| {
+    let create_action = Action::new(move |(module, title_val, venue_val, desc_val, recurring_val, date_val, time_val, duration_val, count): &(String, String, Option<String>, Option<String>, Option<String>, String, String, i32, Option<i32>)| {
         let module = module.clone();
         let title_val = title_val.clone();
         let venue_val = venue_val.clone();
@@ -32,9 +33,10 @@ pub fn NewClass() -> impl IntoView {
         let recurring_val = recurring_val.clone();
         let date_val = date_val.clone();
         let time_val = time_val.clone();
+        let duration_val = *duration_val;
         let count = *count;
         async move {
-            create_class_fn(module, title_val, venue_val, desc_val, recurring_val, date_val, time_val, count).await
+            create_class_fn(module, title_val, venue_val, desc_val, recurring_val, date_val, time_val, duration_val, count).await
         }
     });
 
@@ -72,7 +74,9 @@ pub fn NewClass() -> impl IntoView {
         } else {
             None
         };
-        
+    
+        let duration_val = duration.get().parse::<i32>().unwrap_or(90).max(15);
+
         create_action.dispatch((
             current_module,
             title.get(),
@@ -81,6 +85,7 @@ pub fn NewClass() -> impl IntoView {
             recurring_val,
             date.get(),
             time_str,
+            duration_val,
             count_val,
         ));
     };
@@ -202,6 +207,16 @@ pub fn NewClass() -> impl IntoView {
                                 <div class="t-label">"Minute"</div>
                             </div>
                         </div>
+
+                        <label class="label" style="margin-top:16px;">"Duration"</label>
+                        <select class="input" bind:value=duration>
+                            <option value="45">"45 minutes"</option>
+                            <option value="60">"1 hour"</option>
+                            <option value="75">"1 hour 15 min"</option>
+                            <option value="90">"1 hour 30 min"</option>
+                            <option value="105">"1 hour 45 min"</option>
+                            <option value="120">"2 hours"</option>
+                        </select>
                     </aside>
                 </div>
 

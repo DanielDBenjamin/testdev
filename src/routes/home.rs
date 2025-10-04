@@ -76,6 +76,25 @@ pub fn HomePage() -> impl IntoView {
             .collect::<Vec<_>>()
     });
 
+    let todays_minutes = Signal::derive(move || {
+        filtered_classes
+            .get()
+            .into_iter()
+            .map(|c| c.duration_minutes.max(0))
+            .sum::<i32>()
+    });
+
+    let todays_hours_display = Signal::derive(move || {
+        let minutes = todays_minutes.get();
+        if minutes <= 0 {
+            "0h".to_string()
+        } else if minutes % 60 == 0 {
+            format!("{}h", minutes / 60)
+        } else {
+            format!("{:.1}h", minutes as f64 / 60.0)
+        }
+    });
+
     let on_date_select = Callback::new(move |date: String| {
         selected_date.set(date);
     });
@@ -90,14 +109,7 @@ pub fn HomePage() -> impl IntoView {
             .to_string()
     });
 
-    let total_classes = Signal::derive(move || {
-        modules_resource.get()
-            .and_then(|modules| modules.as_ref().map(|m| {
-                m.iter().map(|mod_| mod_.class_count).sum::<i32>()
-            }))
-            .unwrap_or(0)
-            .to_string()
-    });
+    let total_classes_today = Signal::derive(move || filtered_classes.get().len().to_string());
 
     view! {
         <section class="home">
@@ -107,48 +119,52 @@ pub fn HomePage() -> impl IntoView {
             />
 
             <div class="dashboard-grid">
-                <div>
+                <div class="home-left">
                     <div class="add-module-row">
                         <h3 class="heading">"Your Modules"</h3>
-                        <A href="/modules/new" attr:class="btn btn-outline btn-small">"+ Add Module"</A>
+                        <A href="/modules/new" attr:class="btn btn-primary btn-small">"+ Add Module"</A>
                     </div>
 
-                    <Suspense fallback=move || view! { <div class="loading">"Loading modules..."</div> }>
-                        {move || {
-                            modules_resource.get().map(|modules_opt| {
-                                match modules_opt {
-                                    Some(modules) if !modules.is_empty() => {
-                                        view! {
-                                            <div class="modules-grid">
-                                                {modules.into_iter().map(|module| {
-                                                    view! { <DynamicModuleCard module=module/> }
-                                                }).collect_view()}
-                                            </div>
-                                        }.into_any()
+                    <div class="home-modules-scroll">
+                        <Suspense fallback=move || view! { <div class="loading">"Loading modules..."</div> }>
+                            {move || {
+                                modules_resource.get().map(|modules_opt| {
+                                    match modules_opt {
+                                        Some(modules) if !modules.is_empty() => {
+                                            view! {
+                                                <div class="modules-grid">
+                                                    {modules.into_iter().map(|module| {
+                                                        view! { <DynamicModuleCard module=module/> }
+                                                    }).collect_view()}
+                                                </div>
+                                            }.into_any()
+                                        }
+                                        Some(_) => {
+                                            view! {
+                                                <div class="empty-state">
+                                                    <p>"No modules yet. Create your first module to get started!"</p>
+                                                </div>
+                                            }.into_any()
+                                        }
+                                        None => {
+                                            view! {
+                                                <div class="empty-state">
+                                                    <p>"Please log in to view your modules."</p>
+                                                </div>
+                                            }.into_any()
+                                        }
                                     }
-                                    Some(_) => {
-                                        view! {
-                                            <div class="empty-state">
-                                                <p>"No modules yet. Create your first module to get started!"</p>
-                                            </div>
-                                        }.into_any()
-                                    }
-                                    None => {
-                                        view! {
-                                            <div class="empty-state">
-                                                <p>"Please log in to view your modules."</p>
-                                            </div>
-                                        }.into_any()
-                                    }
-                                }
-                            })
-                        }}
-                    </Suspense>
+                                })
+                            }}
+                        </Suspense>
+                    </div>
 
-                    <div class="stats-row" style="margin-top:16px;">
-                        <StatTile value=move || total_students.get() label="Total Students"/>
-                        <StatTile value=move || total_classes.get() label="Total Classes"/>
-                        <StatTile value=move || "24h".to_string() label="Teaching Hours"/>
+                    <div class="home-summary-stick">
+                        <div class="stats-row home-summary-row">
+                            <StatTile value=move || total_students.get() label="Total Students"/>
+                            <StatTile value=move || total_classes_today.get() label="Classes Today"/>
+                            <StatTile value=move || todays_hours_display.get() label="Teaching Hours"/>
+                        </div>
                     </div>
                 </div>
 

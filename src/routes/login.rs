@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
-use crate::routes::auth_functions::login_user;
-use crate::types::LoginData;
+use crate::routes::auth_functions::{login_user, reset_password_fn};
+use crate::types::{LoginData, ResetPasswordData};
 use crate::user_context::set_current_user;
 
 #[component]
@@ -13,11 +13,23 @@ pub fn Login() -> impl IntoView {
     let message = RwSignal::new(String::new());
     let success = RwSignal::new(false);
 
+    let show_reset = RwSignal::new(false);
+    let reset_email = RwSignal::new(String::new());
+    let reset_new_password = RwSignal::new(String::new());
+    let reset_confirm_password = RwSignal::new(String::new());
+    let reset_message = RwSignal::new(String::new());
+    let reset_success = RwSignal::new(false);
+
     let navigate = use_navigate();
 
     let login_action = Action::new(|data: &LoginData| {
         let data = data.clone();
         async move { login_user(data).await }
+    });
+
+    let reset_action = Action::new(|data: &ResetPasswordData| {
+        let data = data.clone();
+        async move { reset_password_fn(data).await }
     });
 
     let on_submit = move |_| {
@@ -30,6 +42,19 @@ pub fn Login() -> impl IntoView {
         };
         
         login_action.dispatch(data);
+    };
+
+    let on_reset_submit = move |_| {
+        reset_message.set(String::new());
+        reset_success.set(false);
+
+        let data = ResetPasswordData {
+            email: reset_email.get(),
+            new_password: reset_new_password.get(),
+            confirm_password: reset_confirm_password.get(),
+        };
+
+        reset_action.dispatch(data);
     };
 
      // Handle login response
@@ -58,6 +83,21 @@ pub fn Login() -> impl IntoView {
                 Err(e) => {
                     message.set(format!("Error: {}", e));
                     success.set(false);
+                }
+            }
+        }
+    });
+
+    Effect::new(move |_| {
+        if let Some(result) = reset_action.value().get() {
+            match result {
+                Ok(response) => {
+                    reset_message.set(response.message.clone());
+                    reset_success.set(response.success);
+                }
+                Err(e) => {
+                    reset_message.set(format!("Error: {}", e));
+                    reset_success.set(false);
                 }
             }
         }
@@ -103,8 +143,38 @@ pub fn Login() -> impl IntoView {
                     </button>
 
                     <p class="center" style="margin:10px 0 0;">
-                        <A href="#" attr:class="text-link accent">"Forgot password?"</A>
+                        <button class="link-button accent" on:click=move |ev: leptos::ev::MouseEvent| {
+                            ev.prevent_default();
+                            let next = !show_reset.get();
+                            show_reset.set(next);
+                            if next { reset_email.set(email.get()); }
+                            reset_message.set(String::new());
+                            reset_success.set(false);
+                        }>"Forgot password?"</button>
                     </p>
+                    <Show when=move || show_reset.get()>
+                        <div class="reset-inline">
+                            <label class="label">"Email"</label>
+                            <input class="input" type="email" placeholder="jane.gerber@university.edu" bind:value=reset_email />
+
+                            <label class="label">"New Password"</label>
+                            <input class="input" type="password" placeholder="••••••••" bind:value=reset_new_password />
+
+                            <label class="label">"Confirm Password"</label>
+                            <input class="input" type="password" placeholder="••••••••" bind:value=reset_confirm_password />
+
+                            <button class="btn btn-outline btn-block" on:click=on_reset_submit disabled=move || reset_action.pending().get()>
+                                {move || if reset_action.pending().get() { "Updating..." } else { "Reset Password" }}
+                            </button>
+
+                            <Show when=move || !reset_message.get().is_empty()>
+                                <p class=move || if reset_success.get() { "success center" } else { "error center" }>
+                                    {reset_message}
+                                </p>
+                            </Show>
+                        </div>
+                    </Show>
+
                     <p class="muted center" style="margin:6px 0 0;">
                         "Don't have an account? "
                         <A href="/register" attr:class="text-link accent">"Create account"</A>

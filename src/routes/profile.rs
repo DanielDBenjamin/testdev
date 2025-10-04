@@ -2,6 +2,8 @@ use leptos::prelude::*;
 use leptos_router::components::A;
 use crate::user_context::{get_current_user, set_current_user};
 use crate::routes::profile_functions::{update_profile, UpdateProfileRequest};
+use crate::routes::auth_functions::reset_password_fn;
+use crate::types::ResetPasswordData;
 
 #[component]
 pub fn Profile() -> impl IntoView {
@@ -13,6 +15,12 @@ pub fn Profile() -> impl IntoView {
     let email = RwSignal::new(String::new());
     let message = RwSignal::new(String::new());
     let success = RwSignal::new(false);
+
+    let show_reset = RwSignal::new(false);
+    let reset_new_password = RwSignal::new(String::new());
+    let reset_confirm_password = RwSignal::new(String::new());
+    let reset_message = RwSignal::new(String::new());
+    let reset_success = RwSignal::new(false);
 
     // Load current user data into form
     Effect::new(move |_| {
@@ -29,6 +37,12 @@ pub fn Profile() -> impl IntoView {
             update_profile(request).await
         }
     });
+
+    let reset_action = Action::new(move |data: &ResetPasswordData| {
+        let data = data.clone();
+        async move { reset_password_fn(data).await }
+    });
+    let reset_pending = reset_action.pending();
 
     let on_submit = move |_| {
         message.set(String::new());
@@ -50,6 +64,17 @@ pub fn Profile() -> impl IntoView {
         };
 
         update_action.dispatch(request);
+    };
+
+    let on_reset_submit = move |_| {
+        reset_message.set(String::new());
+        reset_success.set(false);
+        let data = ResetPasswordData {
+            email: email.get(),
+            new_password: reset_new_password.get(),
+            confirm_password: reset_confirm_password.get(),
+        };
+        reset_action.dispatch(data);
     };
 
     // Handle response
@@ -75,6 +100,37 @@ pub fn Profile() -> impl IntoView {
         }
     });
 
+    Effect::new(move |_| {
+        if let Some(result) = reset_action.value().get() {
+            match result {
+                Ok(response) => {
+                    reset_message.set(response.message.clone());
+                    reset_success.set(response.success);
+                    if response.success {
+                        reset_new_password.set(String::new());
+                        reset_confirm_password.set(String::new());
+                        show_reset.set(false);
+                    }
+                }
+                Err(e) => {
+                    reset_message.set(format!("Error: {}", e));
+                    reset_success.set(false);
+                }
+            }
+        }
+    });
+
+    let toggle_reset = move |_| {
+        let next = !show_reset.get();
+        show_reset.set(next);
+        if !next {
+            reset_new_password.set(String::new());
+            reset_confirm_password.set(String::new());
+        }
+        reset_message.set(String::new());
+        reset_success.set(false);
+    };
+
     let user_display = move || {
         current_user.get().map(|u| format!("{} {}", u.name, u.surname))
             .unwrap_or_else(|| "User".to_string())
@@ -94,10 +150,10 @@ pub fn Profile() -> impl IntoView {
     view! {
         <section class="profile-page">
             <header class="page-header">
-                <div class="page-header" style="display:flex;align-items:center;gap:8px;">
-                <A href="/home" attr:class="link">"←"</A>
-                <h1 class="page-title">"Profile & Account Settings"</h1>
-            </div>
+                <div class="page-title-row" style="display:flex;align-items:center;gap:8px;">
+                    <A href="/home" attr:class="link">"←"</A>
+                    <h1 class="page-title">"Profile & Account Settings"</h1>
+                </div>
                 <p class="page-subtitle">"Manage your personal information and account preferences"</p>
             </header>
 
@@ -163,8 +219,21 @@ pub fn Profile() -> impl IntoView {
                         <h3 class="profile-reset-title">"Reset Password"</h3>
                         <p class="profile-reset-subtitle">"Change your account password"</p>
                     </div>
-                    <button class="btn profile-reset-btn" type="button">"Reset"</button>
+                    <button class="btn profile-reset-btn" type="button" on:click=toggle_reset>{move || if show_reset.get() { "Close" } else { "Reset" }}</button>
                 </div>
+                <Show when=move || show_reset.get()>
+                    <div class="reset-inline">
+                        <p class="muted">{move || format!("Reset for {}", email.get())}</p>
+                        <label class="profile-label">"New Password"</label>
+                        <input class="input" type="password" bind:value=reset_new_password placeholder="Enter new password" />
+                        <label class="profile-label">"Confirm Password"</label>
+                        <input class="input" type="password" bind:value=reset_confirm_password placeholder="Confirm new password" />
+                        <button class="btn btn-outline" type="button" on:click=on_reset_submit disabled=move || reset_pending.get()>{move || if reset_pending.get() { "Updating..." } else { "Update Password" }}</button>
+                        <Show when=move || !reset_message.get().is_empty()>
+                            <p class=move || if reset_success.get() { "success" } else { "error" }>{reset_message}</p>
+                        </Show>
+                    </div>
+                </Show>
             </section>
 
             <Show when=move || !message.get().is_empty()>

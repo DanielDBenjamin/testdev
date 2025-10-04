@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use leptos_router::components::A;
-use leptos_router::hooks::use_query_map;
-use crate::routes::class_functions::{get_module_classes_fn, delete_class_fn, update_class_status_fn};
+use leptos_router::hooks::{use_query_map, use_navigate};
+use crate::routes::class_functions::{get_module_classes_fn, delete_class_fn, start_class_session_fn, get_active_class_session_fn};
 use crate::routes::module_functions::get_module_fn;
 use crate::database::classes::Class;
 use crate::routes::student_functions::get_module_students;
@@ -263,26 +263,25 @@ pub fn ClassesPage() -> impl IntoView {
 
 #[component]
 fn ClassRow(class: Class) -> impl IntoView {
-    let badge_class = match class.status.as_str() {
-        "completed" => "status-badge completed",
-        "in_progress" => "status-badge in-progress",
-        _ => "status-badge upcoming",
-    };
-
-    let status_text = match class.status.as_str() {
-        "completed" => "Completed",
-        "in_progress" => "In Progress",
-        "upcoming" => "Upcoming",
-        _ => "Unknown",
-    };
-
     let class_id = class.class_id;
     let class_title = class.title.clone();
+    let navigate = use_navigate();
     let current_status = RwSignal::new(class.status.clone());
     let show_delete_modal = RwSignal::new(false);
     
     let status_in_progress = Signal::derive(move || current_status.get() == "in_progress");
     let status_upcoming = Signal::derive(move || current_status.get() == "upcoming");
+    let status_label = Signal::derive(move || match current_status.get().as_str() {
+        "completed" => "Completed".to_string(),
+        "in_progress" => "In Progress".to_string(),
+        "upcoming" => "Upcoming".to_string(),
+        _ => "Unknown".to_string(),
+    });
+    let badge_class_signal = Signal::derive(move || match current_status.get().as_str() {
+        "completed" => "status-badge completed".to_string(),
+        "in_progress" => "status-badge in-progress".to_string(),
+        _ => "status-badge upcoming".to_string(),
+    });
     
     // Delete action
     let delete_action = Action::new(move |id: &i64| {
@@ -292,21 +291,10 @@ fn ClassRow(class: Class) -> impl IntoView {
         }
     });
     
-    // Status update action
-    let status_action = Action::new(move |(id, status): &(i64, String)| {
-        let id = *id;
-        let status = status.clone();
-        async move {
-            update_class_status_fn(id, status).await
-        }
-    });
-    
-    // Handle delete response
     Effect::new(move |_| {
         if let Some(result) = delete_action.value().get() {
             match result {
                 Ok(response) if response.success => {
-                    // Reload page on success
                     _ = window().unwrap().location().reload();
                 }
                 Ok(response) => {
@@ -314,25 +302,6 @@ fn ClassRow(class: Class) -> impl IntoView {
                 }
                 Err(e) => {
                     leptos::logging::log!("Delete error: {}", e);
-                }
-            }
-        }
-    });
-    
-    // Handle status update response
-    Effect::new(move |_| {
-        if let Some(result) = status_action.value().get() {
-            match result {
-                Ok(response) if response.success => {
-                    if let Some(updated_class) = response.class {
-                        current_status.set(updated_class.status);
-                    }
-                }
-                Ok(response) => {
-                    leptos::logging::log!("Status update failed: {}", response.message);
-                }
-                Err(e) => {
-                    leptos::logging::log!("Status update error: {}", e);
                 }
             }
         }
@@ -351,14 +320,71 @@ fn ClassRow(class: Class) -> impl IntoView {
         show_delete_modal.set(false);
     };
     
-    let on_start = move |_| {
-        status_action.dispatch((class_id, "in_progress".to_string()));
-    };
+    let start_session_href = format!("/classes/qr?id={}&origin=classes", class_id);
+    let view_session_href = start_session_href.clone();
+    let start_session_action = Action::new(move |id: &i64| {
+        let id = *id;
+        async move { start_class_session_fn(id).await }
+    });
+    let start_session_pending = start_session_action.pending();
+
+    Effect::new({
+        let current_status = current_status.clone();
+        let navigate = navigate.clone();
+        let href = start_session_href.clone();
+        move |_| {
+            if let Some(result) = start_session_action.value().get() {
+                match result {
+                    Ok(response) => {
+                        if let Some(status) = response.class_status.clone() {
+                            current_status.set(status);
+                        }
+                        if response.success {
+                            navigate(&href, Default::default());
+                        } else {
+                            leptos::logging::log!("Start session failed: {}", response.message);
+                        }
+                    }
+                    Err(e) => {
+                        leptos::logging::log!("Start session error: {}", e);
+                    }
+                }
+            }
+        }
+    });
+
+    let session_check = Resource::new(
+        move || class_id,
+        |id| async move { get_active_class_session_fn(id).await }
+    );
+
+    Effect::new({
+        let current_status = current_status.clone();
+        move |_| {
+            if let Some(result) = session_check.get() {
+                match result {
+                    Ok(response) => {
+                        if let Some(status) = response.class_status.clone() {
+                            current_status.set(status);
+                        }
+                    }
+                    Err(e) => {
+                        leptos::logging::log!("Session check error: {}", e);
+                    }
+                }
+            }
+        }
+    });
     
-    let on_end = move |_| {
-        status_action.dispatch((class_id, "completed".to_string()));
+    let duration_display = {
+        let minutes = class.duration_minutes.max(15);
+        if minutes % 60 == 0 {
+            format!("{}h", minutes / 60)
+        } else {
+            format!("{} min", minutes)
+        }
     };
-    
+
     view! {
         <>
             <tr>
@@ -376,7 +402,7 @@ fn ClassRow(class: Class) -> impl IntoView {
                 <td>
                     <div class="time-cell">
                         <div>{class.time.clone()}</div>
-                        
+                        <div class="muted time-duration">{duration_display}</div>
                     </div>
                 </td>
                 <td>
@@ -387,18 +413,26 @@ fn ClassRow(class: Class) -> impl IntoView {
                 </td>
                 <td>
                     <div class="status-cell">
-                        <span class=badge_class>{status_text}</span>
-                        <Show when=move || status_in_progress.get()>
-                            <button class="end-btn" on:click=on_end>"End"</button>
-                        </Show>
-                        <Show when=move || status_upcoming.get()>
-                            <button class="start-btn" on:click=on_start>"Start"</button>
-                        </Show>
+                        <span class=move || badge_class_signal.get()>{move || status_label.get()}</span>
                     </div>
                 </td>
                 <td>
                     <div class="actions-cell">
-                        <A href=format!("/classes/edit?id={}", class_id) attr:class="btn-icon edit">
+                        <Show when=move || status_upcoming.get()>
+                            <button
+                                class="btn btn-primary start-session-link"
+                                disabled=move || start_session_pending.get()
+                                on:click=move |_| {
+                                    if !start_session_pending.get() {
+                                        start_session_action.dispatch(class_id);
+                                    }
+                                }
+                            >{move || if start_session_pending.get() { "Starting..." } else { "Start Session" }}</button>
+                        </Show>
+                        <Show when=move || status_in_progress.get()>
+                            <A href=view_session_href.clone() attr:class="btn btn-outline alt start-session-link">"View Session"</A>
+                        </Show>
+                        <A href=format!("/classes/edit?id={}&origin=classes", class_id) attr:class="btn-icon edit">
                             <span>"✏"</span>
                             "Edit"
                         </A>
