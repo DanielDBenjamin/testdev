@@ -2,7 +2,7 @@
 use crate::database::{
     authenticate_user, create_user, init_db_pool, update_user_password_by_email, CreateUserRequest,
 };
-use crate::types::{AuthResponse, BasicResponse, LoginData, RegisterData, ResetPasswordData};
+use crate::types::{AuthResponse, BasicResponse, RegisterData};
 use leptos::prelude::*;
 
 #[server(RegisterUser, "/api")]
@@ -86,9 +86,9 @@ pub async fn register_user(data: RegisterData) -> Result<AuthResponse, ServerFnE
 }
 
 #[server(LoginUser, "/api")]
-pub async fn login_user(data: LoginData) -> Result<AuthResponse, ServerFnError> {
+pub async fn login_user(email: String, password: String) -> Result<AuthResponse, ServerFnError> {
     // Validate input
-    if data.email.trim().is_empty() {
+    if email.trim().is_empty() {
         return Ok(AuthResponse {
             success: false,
             message: "Email is required".to_string(),
@@ -96,7 +96,7 @@ pub async fn login_user(data: LoginData) -> Result<AuthResponse, ServerFnError> 
         });
     }
 
-    if data.password.trim().is_empty() {
+    if password.trim().is_empty() {
         return Ok(AuthResponse {
             success: false,
             message: "Password is required".to_string(),
@@ -110,7 +110,9 @@ pub async fn login_user(data: LoginData) -> Result<AuthResponse, ServerFnError> 
         .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     // Authenticate user
-    match authenticate_user(&pool, &data.email.trim().to_lowercase(), &data.password).await {
+    let email_normalized = email.trim().to_lowercase();
+
+    match authenticate_user(&pool, &email_normalized, &password).await {
         Ok(user) => Ok(AuthResponse {
             success: true,
             message: "Login successful!".to_string(),
@@ -125,22 +127,26 @@ pub async fn login_user(data: LoginData) -> Result<AuthResponse, ServerFnError> 
 }
 
 #[server(ResetPassword, "/api")]
-pub async fn reset_password_fn(data: ResetPasswordData) -> Result<BasicResponse, ServerFnError> {
-    if data.email.trim().is_empty() {
+pub async fn reset_password_fn(
+    email: String,
+    new_password: String,
+    confirm_password: String,
+) -> Result<BasicResponse, ServerFnError> {
+    if email.trim().is_empty() {
         return Ok(BasicResponse {
             success: false,
             message: "Email is required".to_string(),
         });
     }
 
-    if data.new_password.len() < 6 {
+    if new_password.len() < 6 {
         return Ok(BasicResponse {
             success: false,
             message: "Password must be at least 6 characters".to_string(),
         });
     }
 
-    if data.new_password != data.confirm_password {
+    if new_password != confirm_password {
         return Ok(BasicResponse {
             success: false,
             message: "Passwords do not match".to_string(),
@@ -151,13 +157,7 @@ pub async fn reset_password_fn(data: ResetPasswordData) -> Result<BasicResponse,
         .await
         .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
-    match update_user_password_by_email(
-        &pool,
-        &data.email.trim().to_lowercase(),
-        &data.new_password,
-    )
-    .await
-    {
+    match update_user_password_by_email(&pool, &email.trim().to_lowercase(), &new_password).await {
         Ok(_) => Ok(BasicResponse {
             success: true,
             message: "Password updated successfully. You can now sign in with your new password."

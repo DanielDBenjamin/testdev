@@ -60,7 +60,7 @@ async fn ensure_session_state(
     let mut session = get_active_session(pool, class_id).await?;
 
     if session.is_none() && now_naive >= start_naive {
-        let new_session = create_session(pool, class_id, None).await?;
+        let new_session = create_session(pool, class_id, None, None, None, None, None).await?;
         let now_utc = Utc::now().to_rfc3339();
         sqlx::query("UPDATE classes SET status = 'in_progress', updated_at = ? WHERE classID = ?")
             .bind(&now_utc)
@@ -654,12 +654,45 @@ pub async fn update_class_status_fn(
 }
 
 #[server(StartClassSession, "/api")]
-pub async fn start_class_session_fn(class_id: i64) -> Result<ClassSessionResponse, ServerFnError> {
+pub async fn start_class_session_fn(
+    class_id: i64,
+    latitude: Option<f64>,
+    longitude: Option<f64>,
+    accuracy: Option<f64>,
+    radius: Option<f64>,
+) -> Result<ClassSessionResponse, ServerFnError> {
     let pool = init_db_pool()
         .await
         .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
-    match create_session(&pool, class_id, None).await {
+    let (lat, lng) = match (latitude, longitude) {
+        (Some(lat), Some(lng)) => (lat, lng),
+        _ => return Ok(ClassSessionResponse {
+            success: false,
+            message:
+                "Unable to determine lecturer location. Please allow location access and try again."
+                    .to_string(),
+            session: None,
+            class_status: None,
+        }),
+    };
+
+    let accuracy = accuracy.filter(|value| value.is_finite() && *value >= 0.0);
+    let radius = radius
+        .filter(|value| value.is_finite() && *value > 0.0)
+        .unwrap_or(30.0);
+
+    match create_session(
+        &pool,
+        class_id,
+        None,
+        Some(lat),
+        Some(lng),
+        accuracy,
+        Some(radius),
+    )
+    .await
+    {
         Ok(session) => {
             let now = Utc::now().to_rfc3339();
             sqlx::query(
@@ -838,6 +871,9 @@ pub async fn save_recurring_series(
 pub async fn record_session_attendance_fn(
     payload: String,
     student_email: String,
+    latitude: Option<f64>,
+    longitude: Option<f64>,
+    accuracy: Option<f64>,
 ) -> Result<RecordAttendanceResponse, ServerFnError> {
     let pool = init_db_pool()
         .await
@@ -892,6 +928,39 @@ pub async fn record_session_attendance_fn(
         });
     }
 
+    let student_latitude = latitude.filter(|value| value.is_finite());
+    let student_longitude = longitude.filter(|value| value.is_finite());
+    let student_accuracy = accuracy.filter(|value| value.is_finite() && *value >= 0.0);
+
+    if let (Some(lect_lat), Some(lect_lng), Some(radius)) = (
+        session.start_latitude,
+        session.start_longitude,
+        session.location_radius,
+    ) {
+        let (Some(student_lat), Some(student_lng)) = (student_latitude, student_longitude) else {
+            return Ok(RecordAttendanceResponse {
+                success: false,
+                message: "Location permission is required to record attendance for this session."
+                    .to_string(),
+            });
+        };
+
+        let lecturer_accuracy = session.start_accuracy.unwrap_or(0.0).max(0.0);
+        let student_accuracy_value = student_accuracy.unwrap_or(0.0);
+        let distance = haversine_distance(lect_lat, lect_lng, student_lat, student_lng);
+        let allowed_distance = radius + lecturer_accuracy + student_accuracy_value;
+
+        if distance > allowed_distance {
+            return Ok(RecordAttendanceResponse {
+                success: false,
+                message: format!(
+                    "You are too far from the lecturer ({:.0}m away, must be within {:.0}m)",
+                    distance, allowed_distance
+                ),
+            });
+        }
+    }
+
     if student_email.trim().is_empty() {
         return Ok(RecordAttendanceResponse {
             success: false,
@@ -929,20 +998,26 @@ pub async fn record_session_attendance_fn(
 
     if let Some(attendance_id) = existing {
         sqlx::query(
-            "UPDATE attendance SET status = 'present', recorded_at = ?, notes = NULL WHERE attendanceID = ?"
+            "UPDATE attendance SET status = 'present', recorded_at = ?, notes = NULL, check_latitude = ?, check_longitude = ?, location_accuracy = ? WHERE attendanceID = ?"
         )
         .bind(&now)
+        .bind(student_latitude)
+        .bind(student_longitude)
+        .bind(student_accuracy)
         .bind(attendance_id)
         .execute(&pool)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to update attendance: {}", e)))?;
     } else {
         sqlx::query(
-            "INSERT INTO attendance (studentID, classID, status, recorded_at, notes) VALUES (?, ?, 'present', ?, NULL)"
+            "INSERT INTO attendance (studentID, classID, status, recorded_at, notes, check_latitude, check_longitude, location_accuracy) VALUES (?, ?, 'present', ?, NULL, ?, ?, ?)"
         )
         .bind(student_id)
         .bind(class_id)
         .bind(&now)
+        .bind(student_latitude)
+        .bind(student_longitude)
+        .bind(student_accuracy)
         .execute(&pool)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to insert attendance: {}", e)))?;
@@ -952,4 +1027,19 @@ pub async fn record_session_attendance_fn(
         success: true,
         message: "Attendance recorded".to_string(),
     })
+}
+
+#[cfg(feature = "ssr")]
+fn haversine_distance(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+    let earth_radius_m = 6_371_000.0_f64;
+    let d_lat = (lat2 - lat1).to_radians();
+    let d_lon = (lon2 - lon1).to_radians();
+    let lat1_rad = lat1.to_radians();
+    let lat2_rad = lat2.to_radians();
+
+    let a =
+        (d_lat / 2.0).sin().powi(2) + lat1_rad.cos() * lat2_rad.cos() * (d_lon / 2.0).sin().powi(2);
+    let c = 2.0 * a.sqrt().atan2((1.0 - a).sqrt());
+
+    earth_radius_m * c
 }

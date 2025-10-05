@@ -21,24 +21,11 @@ pub struct RegisterData {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct LoginData {
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AuthResponse {
     pub success: bool,
     pub message: String,
     pub user: Option<UserProfile>,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ResetPasswordData {
-    pub email: String,
-    pub new_password: String,
-    pub confirm_password: String,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BasicResponse {
     pub success: bool,

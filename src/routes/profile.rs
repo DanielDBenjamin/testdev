@@ -1,6 +1,5 @@
-use crate::routes::auth_functions::reset_password_fn;
+use crate::routes::auth_functions::ResetPassword;
 use crate::routes::profile_functions::{update_profile, UpdateProfileRequest};
-use crate::types::ResetPasswordData;
 use crate::user_context::{get_current_user, set_current_user};
 use leptos::prelude::*;
 use leptos_router::components::A;
@@ -36,10 +35,7 @@ pub fn Profile() -> impl IntoView {
         async move { update_profile(request).await }
     });
 
-    let reset_action = Action::new(move |data: &ResetPasswordData| {
-        let data = data.clone();
-        async move { reset_password_fn(data).await }
-    });
+    let reset_action = ServerAction::<ResetPassword>::new();
     let reset_pending = reset_action.pending();
 
     let on_submit = move |_| {
@@ -67,12 +63,11 @@ pub fn Profile() -> impl IntoView {
     let on_reset_submit = move |_| {
         reset_message.set(String::new());
         reset_success.set(false);
-        let data = ResetPasswordData {
+        reset_action.dispatch(ResetPassword {
             email: email.get(),
             new_password: reset_new_password.get(),
             confirm_password: reset_confirm_password.get(),
-        };
-        reset_action.dispatch(data);
+        });
     };
 
     // Handle response

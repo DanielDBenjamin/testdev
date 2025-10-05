@@ -33,13 +33,39 @@ pub fn StudentHomePage() -> impl IntoView {
                 let feedback = feedback.clone();
                 let payload = data.clone();
                 spawn_local(async move {
-                    match record_session_attendance_fn(payload, email).await {
-                        Ok(resp) => {
-                            feedback.set(Some((resp.success, resp.message)));
+                    #[cfg(not(feature = "ssr"))]
+                    {
+                        match crate::utils::geolocation::get_current_location().await {
+                            Ok(location) => {
+                                match record_session_attendance_fn(
+                                    payload.clone(),
+                                    email.clone(),
+                                    Some(location.latitude),
+                                    Some(location.longitude),
+                                    location.accuracy,
+                                )
+                                .await
+                                {
+                                    Ok(resp) => {
+                                        feedback.set(Some((resp.success, resp.message)));
+                                    }
+                                    Err(e) => {
+                                        feedback.set(Some((false, e.to_string())));
+                                    }
+                                }
+                            }
+                            Err(err) => {
+                                feedback.set(Some((false, err)));
+                            }
                         }
-                        Err(e) => {
-                            feedback.set(Some((false, e.to_string())));
-                        }
+                    }
+
+                    #[cfg(feature = "ssr")]
+                    {
+                        feedback.set(Some((
+                            false,
+                            "Location capture requires a browser.".to_string(),
+                        )));
                     }
                 });
             } else {

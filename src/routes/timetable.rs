@@ -6,6 +6,7 @@ use crate::routes::stats_functions::get_module_enrollment_count;
 use crate::user_context::get_current_user;
 use chrono::{Local, NaiveTime};
 use leptos::prelude::*;
+use leptos::server_fn::ServerFnError;
 use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
 use std::collections::HashSet;
@@ -234,9 +235,67 @@ fn TimetableRow(class: Class) -> impl IntoView {
     let venue = class.venue.clone().unwrap_or_else(|| "TBA".to_string());
     let module_code_display = class.module_code.clone();
 
-    let start_session_action = Action::new(move |id: &i64| {
-        let id = *id;
-        async move { start_class_session_fn(id).await }
+    const LOCATION_RADIUS_METERS: f64 = 30.0;
+    let location_status = RwSignal::new(None::<String>);
+    let location_error = RwSignal::new(None::<String>);
+
+    #[cfg(not(feature = "ssr"))]
+    let start_session_action = Action::new_local({
+        let location_status = location_status.clone();
+        let location_error = location_error.clone();
+        move |id: &i64| {
+            let id = *id;
+            let location_status = location_status.clone();
+            let location_error = location_error.clone();
+            async move {
+                location_error.set(None);
+                location_status.set(Some("Requesting location...".to_string()));
+
+                match crate::utils::geolocation::get_current_location().await {
+                    Ok(loc) => {
+                        location_status
+                            .set(Some("Location captured. Starting session...".to_string()));
+                        let response = start_class_session_fn(
+                            id,
+                            Some(loc.latitude),
+                            Some(loc.longitude),
+                            loc.accuracy,
+                            Some(LOCATION_RADIUS_METERS),
+                        )
+                        .await;
+
+                        if response.is_err() {
+                            location_status.set(None);
+                        }
+
+                        response
+                    }
+                    Err(err) => {
+                        location_status.set(None);
+                        location_error.set(Some(err.clone()));
+                        Err(ServerFnError::new(err))
+                    }
+                }
+            }
+        }
+    });
+
+    #[cfg(feature = "ssr")]
+    let start_session_action = Action::new_local({
+        let location_status = location_status.clone();
+        let location_error = location_error.clone();
+        move |_id: &i64| {
+            let location_status = location_status.clone();
+            let location_error = location_error.clone();
+            async move {
+                location_status.set(None);
+                let msg = "Location capture requires a browser context.".to_string();
+                location_error.set(Some(msg.clone()));
+                Err::<crate::routes::class_functions::ClassSessionResponse, ServerFnError>(
+                    ServerFnError::new(msg),
+                )
+            }
+        }
     });
     let start_pending = start_session_action.pending();
 
@@ -244,6 +303,8 @@ fn TimetableRow(class: Class) -> impl IntoView {
         let navigate = navigate.clone();
         let href = start_href.clone();
         let current_status = current_status.clone();
+        let location_status = location_status.clone();
+        let location_error = location_error.clone();
         move |_| {
             if let Some(result) = start_session_action.value().get() {
                 match result {
@@ -252,12 +313,18 @@ fn TimetableRow(class: Class) -> impl IntoView {
                             current_status.set(status);
                         }
                         if response.success {
+                            location_status.set(None);
+                            location_error.set(None);
                             navigate(&href, Default::default());
                         } else {
+                            location_status.set(None);
+                            location_error.set(Some(response.message.clone()));
                             leptos::logging::log!("Start session failed: {}", response.message);
                         }
                     }
                     Err(e) => {
+                        location_status.set(None);
+                        location_error.set(Some(e.to_string()));
                         leptos::logging::log!("Start session error: {}", e);
                     }
                 }
@@ -317,6 +384,9 @@ fn TimetableRow(class: Class) -> impl IntoView {
     };
     let class_icon_classes = format!("class-icon {}", variant);
 
+    let location_status_display = location_status.clone();
+    let location_error_display = location_error.clone();
+
     view! {
         <div class="card timetable-row">
             <div class="row-left">
@@ -350,6 +420,14 @@ fn TimetableRow(class: Class) -> impl IntoView {
                         }
                     >{move || if start_pending.get() { "Starting..." } else { "Start Session" }}</button>
                 </Show>
+                {move || location_status_display
+                    .get()
+                    .map(|msg| view! { <div class="location-status muted">{msg}</div> }.into_any())
+                    .unwrap_or_else(|| view! { <></> }.into_any())}
+                {move || location_error_display
+                    .get()
+                    .map(|msg| view! { <div class="location-error">{msg}</div> }.into_any())
+                    .unwrap_or_else(|| view! { <></> }.into_any())}
                 <Show when=move || status_in_progress.get()>
                     <A href=start_href.clone() attr:class="btn btn-outline">"View Session"</A>
                 </Show>

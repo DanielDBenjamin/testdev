@@ -12,6 +12,10 @@ pub struct ClassSession {
     pub started_at: String,
     pub ended_at: Option<String>,
     pub started_by: Option<String>,
+    pub start_latitude: Option<f64>,
+    pub start_longitude: Option<f64>,
+    pub start_accuracy: Option<f64>,
+    pub location_radius: Option<f64>,
 }
 
 #[cfg(feature = "ssr")]
@@ -24,6 +28,10 @@ struct DbClassSession {
     started_at: String,
     ended_at: Option<String>,
     started_by: Option<String>,
+    start_latitude: Option<f64>,
+    start_longitude: Option<f64>,
+    start_accuracy: Option<f64>,
+    location_radius: Option<f64>,
 }
 
 #[cfg(feature = "ssr")]
@@ -35,6 +43,10 @@ impl From<DbClassSession> for ClassSession {
             started_at: db.started_at,
             ended_at: db.ended_at,
             started_by: db.started_by,
+            start_latitude: db.start_latitude,
+            start_longitude: db.start_longitude,
+            start_accuracy: db.start_accuracy,
+            location_radius: db.location_radius,
         }
     }
 }
@@ -60,6 +72,10 @@ pub async fn create_session(
     pool: &SqlitePool,
     class_id: i64,
     started_by: Option<String>,
+    latitude: Option<f64>,
+    longitude: Option<f64>,
+    accuracy: Option<f64>,
+    radius: Option<f64>,
 ) -> Result<ClassSession, String> {
     if get_active_session(pool, class_id).await?.is_some() {
         return Err("A session is already active for this class".to_string());
@@ -67,11 +83,15 @@ pub async fn create_session(
 
     let now = Utc::now().to_rfc3339();
     let result = sqlx::query(
-        "INSERT INTO class_sessions (classID, started_at, started_by) VALUES (?, ?, ?)",
+        "INSERT INTO class_sessions (classID, started_at, started_by, start_latitude, start_longitude, start_accuracy, location_radius) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(class_id)
     .bind(&now)
     .bind(&started_by)
+    .bind(latitude)
+    .bind(longitude)
+    .bind(accuracy)
+    .bind(radius)
     .execute(pool)
     .await
     .map_err(|e| format!("Failed to create session: {}", e))?;

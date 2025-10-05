@@ -5,6 +5,7 @@ pub mod pages;
 pub mod routes;
 pub mod types;
 pub mod user_context;
+pub mod utils;
 
 #[cfg(feature = "hydrate")]
 #[wasm_bindgen::prelude::wasm_bindgen]
