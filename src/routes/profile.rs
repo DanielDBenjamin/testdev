@@ -1,14 +1,14 @@
+use crate::routes::auth_functions::reset_password_fn;
+use crate::routes::profile_functions::{update_profile, UpdateProfileRequest};
+use crate::types::ResetPasswordData;
+use crate::user_context::{get_current_user, set_current_user};
 use leptos::prelude::*;
 use leptos_router::components::A;
-use crate::user_context::{get_current_user, set_current_user};
-use crate::routes::profile_functions::{update_profile, UpdateProfileRequest};
-use crate::routes::auth_functions::reset_password_fn;
-use crate::types::ResetPasswordData;
 
 #[component]
 pub fn Profile() -> impl IntoView {
     let current_user = get_current_user();
-    
+
     // Form fields
     let name = RwSignal::new(String::new());
     let surname = RwSignal::new(String::new());
@@ -33,9 +33,7 @@ pub fn Profile() -> impl IntoView {
 
     let update_action = Action::new(move |request: &UpdateProfileRequest| {
         let request = request.clone();
-        async move {
-            update_profile(request).await
-        }
+        async move { update_profile(request).await }
     });
 
     let reset_action = Action::new(move |data: &ResetPasswordData| {
@@ -47,7 +45,7 @@ pub fn Profile() -> impl IntoView {
     let on_submit = move |_| {
         message.set(String::new());
         success.set(false);
-        
+
         let user_id = match current_user.get() {
             Some(user) => user.user_id,
             None => {
@@ -84,7 +82,7 @@ pub fn Profile() -> impl IntoView {
                 Ok(response) => {
                     message.set(response.message.clone());
                     success.set(response.success);
-                    
+
                     if response.success {
                         // Update the user context with new data
                         if let Some(updated_user) = response.user {
@@ -132,19 +130,22 @@ pub fn Profile() -> impl IntoView {
     };
 
     let user_display = move || {
-        current_user.get().map(|u| format!("{} {}", u.name, u.surname))
+        current_user
+            .get()
+            .map(|u| format!("{} {}", u.name, u.surname))
             .unwrap_or_else(|| "User".to_string())
     };
 
     let user_role = move || {
-        current_user.get().map(|u| {
-            match u.role.as_str() {
+        current_user
+            .get()
+            .map(|u| match u.role.as_str() {
                 "lecturer" => "Lecturer",
                 "tutor" => "Tutor",
                 "student" => "Student",
                 _ => "User",
-            }
-        }).unwrap_or("User")
+            })
+            .unwrap_or("User")
     };
 
     view! {
@@ -243,16 +244,16 @@ pub fn Profile() -> impl IntoView {
             </Show>
 
             <div class="profile-actions">
-                <button 
-                    class="btn profile-save" 
+                <button
+                    class="btn profile-save"
                     type="button"
                     on:click=on_submit
                     disabled=move || update_action.pending().get()
                 >
-                    {move || if update_action.pending().get() { 
-                        "Saving...".into_view() 
-                    } else { 
-                        "Save Changes".into_view() 
+                    {move || if update_action.pending().get() {
+                        "Saving...".into_view()
+                    } else {
+                        "Save Changes".into_view()
                     }}
                 </button>
                 <A href="/home" attr:class="btn profile-cancel">"Cancel"</A>

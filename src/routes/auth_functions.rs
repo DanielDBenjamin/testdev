@@ -1,6 +1,8 @@
 #[cfg(feature = "ssr")]
-use crate::database::{init_db_pool, create_user, authenticate_user, update_user_password_by_email, CreateUserRequest};
-use crate::types::{RegisterData, LoginData, AuthResponse, ResetPasswordData, BasicResponse};
+use crate::database::{
+    authenticate_user, create_user, init_db_pool, update_user_password_by_email, CreateUserRequest,
+};
+use crate::types::{AuthResponse, BasicResponse, LoginData, RegisterData, ResetPasswordData};
 use leptos::prelude::*;
 
 #[server(RegisterUser, "/api")]
@@ -55,9 +57,9 @@ pub async fn register_user(data: RegisterData) -> Result<AuthResponse, ServerFnE
     }
 
     // Initialize database connection
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     // Create user request
     let create_request = CreateUserRequest {
@@ -103,9 +105,9 @@ pub async fn login_user(data: LoginData) -> Result<AuthResponse, ServerFnError> 
     }
 
     // Initialize database connection
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     // Authenticate user
     match authenticate_user(&pool, &data.email.trim().to_lowercase(), &data.password).await {
@@ -145,12 +147,21 @@ pub async fn reset_password_fn(data: ResetPasswordData) -> Result<BasicResponse,
         });
     }
 
-    let pool = init_db_pool().await.map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
-    match update_user_password_by_email(&pool, &data.email.trim().to_lowercase(), &data.new_password).await {
+    match update_user_password_by_email(
+        &pool,
+        &data.email.trim().to_lowercase(),
+        &data.new_password,
+    )
+    .await
+    {
         Ok(_) => Ok(BasicResponse {
             success: true,
-            message: "Password updated successfully. You can now sign in with your new password.".to_string(),
+            message: "Password updated successfully. You can now sign in with your new password."
+                .to_string(),
         }),
         Err(e) => Ok(BasicResponse {
             success: false,

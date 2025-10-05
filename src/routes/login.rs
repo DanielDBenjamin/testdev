@@ -1,9 +1,9 @@
-use leptos::prelude::*;
-use leptos_router::components::A;
-use leptos_router::hooks::use_navigate;
 use crate::routes::auth_functions::{login_user, reset_password_fn};
 use crate::types::{LoginData, ResetPasswordData};
 use crate::user_context::set_current_user;
+use leptos::prelude::*;
+use leptos_router::components::A;
+use leptos_router::hooks::use_navigate;
 
 #[component]
 pub fn Login() -> impl IntoView {
@@ -35,12 +35,12 @@ pub fn Login() -> impl IntoView {
     let on_submit = move |_| {
         message.set(String::new());
         success.set(false);
-        
+
         let data = LoginData {
             email: email.get(),
             password: password.get(),
         };
-        
+
         login_action.dispatch(data);
     };
 
@@ -57,14 +57,14 @@ pub fn Login() -> impl IntoView {
         reset_action.dispatch(data);
     };
 
-     // Handle login response
+    // Handle login response
     Effect::new(move |_| {
         if let Some(result) = login_action.value().get() {
             match result {
                 Ok(auth_response) => {
                     message.set(auth_response.message);
                     success.set(auth_response.success);
-                    
+
                     if auth_response.success {
                         // Store the logged-in user
                         if let Some(user) = auth_response.user {
@@ -74,7 +74,7 @@ pub fn Login() -> impl IntoView {
                                 "lecturer" | "tutor" => "/home",
                                 _ => "/home", // Default fallback
                             };
-                            
+
                             set_current_user(user);
                             navigate(redirect_path, Default::default());
                         }
@@ -112,7 +112,7 @@ pub fn Login() -> impl IntoView {
                     </div>
                     <p class="tagline">"Track your time, manage your life"</p>
                 </div>
-                
+
                 <div class="form">
                     <label class="label">"Email"</label>
                     <div class="input-group">
@@ -135,10 +135,10 @@ pub fn Login() -> impl IntoView {
                         on:click=on_submit
                         disabled=move || login_action.pending().get()
                     >
-                        {move || if login_action.pending().get() { 
-                            "Signing in...".into_view() 
-                        } else { 
-                            "Sign In".into_view() 
+                        {move || if login_action.pending().get() {
+                            "Signing in...".into_view()
+                        } else {
+                            "Sign In".into_view()
                         }}
                     </button>
 

@@ -1,16 +1,14 @@
-use leptos::prelude::*;
 use crate::user_context::get_current_user;
+use leptos::prelude::*;
 use leptos_router::components::A;
 
 #[component]
 pub fn TopBar() -> impl IntoView {
     let current_user = get_current_user();
-    
-    let user_name = move || {
-        match current_user.get() {
-            Some(user) => format!("{} {}", user.name, user.surname),
-            None => "User".to_string(),
-        }
+
+    let user_name = move || match current_user.get() {
+        Some(user) => format!("{} {}", user.name, user.surname),
+        None => "User".to_string(),
     };
 
     view! {

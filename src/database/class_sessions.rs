@@ -40,7 +40,10 @@ impl From<DbClassSession> for ClassSession {
 }
 
 #[cfg(feature = "ssr")]
-pub async fn get_active_session(pool: &SqlitePool, class_id: i64) -> Result<Option<ClassSession>, String> {
+pub async fn get_active_session(
+    pool: &SqlitePool,
+    class_id: i64,
+) -> Result<Option<ClassSession>, String> {
     let session = sqlx::query_as::<_, DbClassSession>(
         "SELECT * FROM class_sessions WHERE classID = ? AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1"
     )
@@ -53,14 +56,18 @@ pub async fn get_active_session(pool: &SqlitePool, class_id: i64) -> Result<Opti
 }
 
 #[cfg(feature = "ssr")]
-pub async fn create_session(pool: &SqlitePool, class_id: i64, started_by: Option<String>) -> Result<ClassSession, String> {
+pub async fn create_session(
+    pool: &SqlitePool,
+    class_id: i64,
+    started_by: Option<String>,
+) -> Result<ClassSession, String> {
     if get_active_session(pool, class_id).await?.is_some() {
         return Err("A session is already active for this class".to_string());
     }
 
     let now = Utc::now().to_rfc3339();
     let result = sqlx::query(
-        "INSERT INTO class_sessions (classID, started_at, started_by) VALUES (?, ?, ?)"
+        "INSERT INTO class_sessions (classID, started_at, started_by) VALUES (?, ?, ?)",
     )
     .bind(class_id)
     .bind(&now)
@@ -70,13 +77,12 @@ pub async fn create_session(pool: &SqlitePool, class_id: i64, started_by: Option
     .map_err(|e| format!("Failed to create session: {}", e))?;
 
     let session_id = result.last_insert_rowid();
-    let session = sqlx::query_as::<_, DbClassSession>(
-        "SELECT * FROM class_sessions WHERE sessionID = ?"
-    )
-    .bind(session_id)
-    .fetch_one(pool)
-    .await
-    .map_err(|e| format!("Failed to load created session: {}", e))?;
+    let session =
+        sqlx::query_as::<_, DbClassSession>("SELECT * FROM class_sessions WHERE sessionID = ?")
+            .bind(session_id)
+            .fetch_one(pool)
+            .await
+            .map_err(|e| format!("Failed to load created session: {}", e))?;
 
     Ok(session.into())
 }
@@ -85,35 +91,34 @@ pub async fn create_session(pool: &SqlitePool, class_id: i64, started_by: Option
 pub async fn end_session(pool: &SqlitePool, session_id: i64) -> Result<ClassSession, String> {
     let now = Utc::now().to_rfc3339();
 
-    sqlx::query(
-        "UPDATE class_sessions SET ended_at = ? WHERE sessionID = ? AND ended_at IS NULL"
-    )
-    .bind(&now)
-    .bind(session_id)
-    .execute(pool)
-    .await
-    .map_err(|e| format!("Failed to end session: {}", e))?;
+    sqlx::query("UPDATE class_sessions SET ended_at = ? WHERE sessionID = ? AND ended_at IS NULL")
+        .bind(&now)
+        .bind(session_id)
+        .execute(pool)
+        .await
+        .map_err(|e| format!("Failed to end session: {}", e))?;
 
-    let session = sqlx::query_as::<_, DbClassSession>(
-        "SELECT * FROM class_sessions WHERE sessionID = ?"
-    )
-    .bind(session_id)
-    .fetch_one(pool)
-    .await
-    .map_err(|e| format!("Failed to fetch ended session: {}", e))?;
+    let session =
+        sqlx::query_as::<_, DbClassSession>("SELECT * FROM class_sessions WHERE sessionID = ?")
+            .bind(session_id)
+            .fetch_one(pool)
+            .await
+            .map_err(|e| format!("Failed to fetch ended session: {}", e))?;
 
     Ok(session.into())
 }
 
 #[cfg(feature = "ssr")]
-pub async fn get_session_by_id(pool: &SqlitePool, session_id: i64) -> Result<Option<ClassSession>, String> {
-    let session = sqlx::query_as::<_, DbClassSession>(
-        "SELECT * FROM class_sessions WHERE sessionID = ?"
-    )
-    .bind(session_id)
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| format!("Failed to fetch session: {}", e))?;
+pub async fn get_session_by_id(
+    pool: &SqlitePool,
+    session_id: i64,
+) -> Result<Option<ClassSession>, String> {
+    let session =
+        sqlx::query_as::<_, DbClassSession>("SELECT * FROM class_sessions WHERE sessionID = ?")
+            .bind(session_id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| format!("Failed to fetch session: {}", e))?;
 
     Ok(session.map(Into::into))
 }

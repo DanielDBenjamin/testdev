@@ -1,11 +1,13 @@
-use leptos::prelude::*;
 use crate::database::classes::Class;
-use crate::user_context::get_current_user;
-use crate::routes::class_functions::{get_lecturer_classes_fn, start_class_session_fn, get_active_class_session_fn};
+use crate::routes::class_functions::{
+    get_active_class_session_fn, get_lecturer_classes_fn, start_class_session_fn,
+};
 use crate::routes::stats_functions::get_module_enrollment_count;
+use crate::user_context::get_current_user;
+use chrono::{Local, NaiveTime};
+use leptos::prelude::*;
 use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
-use chrono::{Local, NaiveTime};
 use std::collections::HashSet;
 
 #[component]
@@ -17,12 +19,10 @@ pub fn Timetable() -> impl IntoView {
         move || current_user.get().map(|u| u.email_address.clone()),
         |email| async move {
             match email {
-                Some(email) => {
-                    match get_lecturer_classes_fn(email).await {
-                        Ok(response) if response.success => Some(response.classes),
-                        _ => None,
-                    }
-                }
+                Some(email) => match get_lecturer_classes_fn(email).await {
+                    Ok(response) if response.success => Some(response.classes),
+                    _ => None,
+                },
                 None => None,
             }
         },
@@ -42,7 +42,9 @@ pub fn Timetable() -> impl IntoView {
             "Tomorrow" => 1,
             _ => 0,
         };
-        (base + chrono::Duration::days(offset)).format("%Y-%m-%d").to_string()
+        (base + chrono::Duration::days(offset))
+            .format("%Y-%m-%d")
+            .to_string()
     });
 
     // Pretty label like: "Today, Wednesday, October 9 2024"
@@ -108,7 +110,7 @@ pub fn Timetable() -> impl IntoView {
                 }
             }
             total
-        }
+        },
     );
 
     view! {
@@ -213,7 +215,8 @@ fn TimetableRow(class: Class) -> impl IntoView {
 
     let time_range = {
         // We only store start time; render as start - (start + duration)
-        let start = NaiveTime::parse_from_str(&class.time, "%H:%M").unwrap_or(NaiveTime::from_hms_opt(10,0,0).unwrap());
+        let start = NaiveTime::parse_from_str(&class.time, "%H:%M")
+            .unwrap_or(NaiveTime::from_hms_opt(10, 0, 0).unwrap());
         let minutes = class.duration_minutes.max(15) as i64;
         let end = start + chrono::Duration::minutes(minutes);
         format!("{} - {}", start.format("%H:%M"), end.format("%H:%M"))
@@ -264,7 +267,7 @@ fn TimetableRow(class: Class) -> impl IntoView {
 
     let session_check = Resource::new(
         move || class_id,
-        |id| async move { get_active_class_session_fn(id).await }
+        |id| async move { get_active_class_session_fn(id).await },
     );
 
     Effect::new({
@@ -288,12 +291,17 @@ fn TimetableRow(class: Class) -> impl IntoView {
     // Enrollment count for the module of this class
     let enroll_count = Resource::new(
         move || class.module_code.clone(),
-        |code| async move { get_module_enrollment_count(code).await }
+        |code| async move { get_module_enrollment_count(code).await },
     );
 
     // Determine color variant like Home page; use module initials as icon (ASCII only)
     let hash = module_code_display.chars().map(|c| c as u32).sum::<u32>();
-    let variant = match hash % 4 { 0 => "mod-purp", 1 => "mod-blue", 2 => "mod-orange", _ => "mod-green" };
+    let variant = match hash % 4 {
+        0 => "mod-purp",
+        1 => "mod-blue",
+        2 => "mod-orange",
+        _ => "mod-green",
+    };
     let initials = {
         let letters: String = module_code_display
             .chars()
@@ -301,7 +309,11 @@ fn TimetableRow(class: Class) -> impl IntoView {
             .take(3)
             .collect();
         let up = letters.to_uppercase();
-        if up.is_empty() { "MOD".to_string() } else { up }
+        if up.is_empty() {
+            "MOD".to_string()
+        } else {
+            up
+        }
     };
     let class_icon_classes = format!("class-icon {}", variant);
 

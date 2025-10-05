@@ -3,11 +3,9 @@ use sqlx::SqlitePool;
 /// Run database migrations
 pub async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::migrate::MigrateError> {
     println!("🔄 Running database migrations...");
-    
-    sqlx::migrate!("./migrations")
-        .run(pool)
-        .await?;
-    
+
+    sqlx::migrate!("./migrations").run(pool).await?;
+
     println!("✅ Database migrations completed successfully!");
     Ok(())
 }
@@ -20,7 +18,7 @@ pub async fn test_database_structure(pool: &SqlitePool) -> Result<(), sqlx::Erro
     let user_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users")
         .fetch_one(pool)
         .await?;
-    
+
     let module_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM modules")
         .fetch_one(pool)
         .await?;
@@ -34,6 +32,6 @@ pub async fn test_database_structure(pool: &SqlitePool) -> Result<(), sqlx::Erro
     println!("   📚 Modules: {}", module_count.0);
     println!("   🎓 Classes: {}", class_count.0);
     println!("✅ Database structure test successful!");
-    
+
     Ok(())
 }

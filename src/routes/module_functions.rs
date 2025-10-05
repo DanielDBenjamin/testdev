@@ -1,10 +1,12 @@
+use crate::database::modules::{CreateModuleRequest, Module, ModuleWithStats, UpdateModuleRequest};
 use leptos::prelude::*;
-use crate::database::modules::{ Module, ModuleWithStats, UpdateModuleRequest, CreateModuleRequest };
 
 #[cfg(feature = "ssr")]
 use crate::database::{
-    init_db_pool, 
-    modules::{create_module, get_lecturer_modules_with_stats, get_module, update_module, delete_module}
+    init_db_pool,
+    modules::{
+        create_module, delete_module, get_lecturer_modules_with_stats, get_module, update_module,
+    },
 };
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -47,9 +49,9 @@ pub async fn create_module_fn(
     }
 
     // Initialize database connection
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     let request = CreateModuleRequest {
         module_code: module_code.trim().to_string(),
@@ -76,9 +78,9 @@ pub async fn create_module_fn(
 pub async fn get_lecturer_modules_fn(
     lecturer_email: String,
 ) -> Result<ModulesListResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     match get_lecturer_modules_with_stats(&pool, &lecturer_email).await {
         Ok(modules) => Ok(ModulesListResponse {
@@ -96,12 +98,10 @@ pub async fn get_lecturer_modules_fn(
 
 /// Get a single module by code
 #[server(GetModule, "/api")]
-pub async fn get_module_fn(
-    module_code: String,
-) -> Result<ModuleResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+pub async fn get_module_fn(module_code: String) -> Result<ModuleResponse, ServerFnError> {
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     match get_module(&pool, &module_code).await {
         Ok(Some(module)) => Ok(ModuleResponse {
@@ -137,9 +137,9 @@ pub async fn update_module_fn(
         });
     }
 
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     let request = UpdateModuleRequest {
         module_code,
@@ -163,12 +163,10 @@ pub async fn update_module_fn(
 
 /// Delete a module
 #[server(DeleteModule, "/api")]
-pub async fn delete_module_fn(
-    module_code: String,
-) -> Result<ModuleResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+pub async fn delete_module_fn(module_code: String) -> Result<ModuleResponse, ServerFnError> {
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     match delete_module(&pool, &module_code).await {
         Ok(_) => Ok(ModuleResponse {

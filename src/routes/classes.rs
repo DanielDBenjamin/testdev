@@ -1,19 +1,19 @@
-use leptos::prelude::*;
-use leptos_router::components::A;
-use leptos_router::hooks::{use_query_map, use_navigate};
-use crate::routes::class_functions::{get_module_classes_fn, delete_class_fn, start_class_session_fn, get_active_class_session_fn};
-use crate::routes::module_functions::get_module_fn;
 use crate::database::classes::Class;
+use crate::routes::class_functions::{
+    delete_class_fn, get_active_class_session_fn, get_module_classes_fn, start_class_session_fn,
+};
+use crate::routes::module_functions::get_module_fn;
 use crate::routes::student_functions::get_module_students;
+use leptos::prelude::*;
 use leptos::web_sys::window;
+use leptos_router::components::A;
+use leptos_router::hooks::{use_navigate, use_query_map};
 
 #[component]
 pub fn ClassesPage() -> impl IntoView {
     let query = use_query_map();
-    
-    let module_code = Signal::derive(move || {
-        query.with(|q| q.get("module").unwrap_or_default())
-    });
+
+    let module_code = Signal::derive(move || query.with(|q| q.get("module").unwrap_or_default()));
 
     // Load module details
     let module_resource = Resource::new(
@@ -47,7 +47,9 @@ pub fn ClassesPage() -> impl IntoView {
     let students_resource = Resource::new(
         move || module_code.get(),
         |code| async move {
-            if code.is_empty() { return None; }
+            if code.is_empty() {
+                return None;
+            }
             match get_module_students(code).await {
                 Ok(response) if response.success => Some(response.students),
                 _ => None,
@@ -61,24 +63,29 @@ pub fn ClassesPage() -> impl IntoView {
 
     // Calculate stats
     let total_classes = Signal::derive(move || {
-        classes_resource.get()
+        classes_resource
+            .get()
             .and_then(|c| c.as_ref().map(|classes| classes.len()))
             .unwrap_or(0)
     });
 
     let completed_classes = Signal::derive(move || {
-        classes_resource.get()
-            .and_then(|c| c.as_ref().map(|classes| {
-                classes.iter().filter(|c| c.status == "completed").count()
-            }))
+        classes_resource
+            .get()
+            .and_then(|c| {
+                c.as_ref()
+                    .map(|classes| classes.iter().filter(|c| c.status == "completed").count())
+            })
             .unwrap_or(0)
     });
 
     let upcoming_classes = Signal::derive(move || {
-        classes_resource.get()
-            .and_then(|c| c.as_ref().map(|classes| {
-                classes.iter().filter(|c| c.status == "upcoming").count()
-            }))
+        classes_resource
+            .get()
+            .and_then(|c| {
+                c.as_ref()
+                    .map(|classes| classes.iter().filter(|c| c.status == "upcoming").count())
+            })
             .unwrap_or(0)
     });
 
@@ -147,8 +154,8 @@ pub fn ClassesPage() -> impl IntoView {
                                         <div class="section-header">
                                             <h3 class="heading">"Classes Schedule"</h3>
                                             <div class="search-controls">
-                                                <input 
-                                                    class="input search-input" 
+                                                <input
+                                                    class="input search-input"
                                                     placeholder="Search classes..."
                                                     bind:value=search_term
                                                 />
@@ -268,7 +275,7 @@ fn ClassRow(class: Class) -> impl IntoView {
     let navigate = use_navigate();
     let current_status = RwSignal::new(class.status.clone());
     let show_delete_modal = RwSignal::new(false);
-    
+
     let status_in_progress = Signal::derive(move || current_status.get() == "in_progress");
     let status_upcoming = Signal::derive(move || current_status.get() == "upcoming");
     let status_label = Signal::derive(move || match current_status.get().as_str() {
@@ -282,15 +289,13 @@ fn ClassRow(class: Class) -> impl IntoView {
         "in_progress" => "status-badge in-progress".to_string(),
         _ => "status-badge upcoming".to_string(),
     });
-    
+
     // Delete action
     let delete_action = Action::new(move |id: &i64| {
         let id = *id;
-        async move {
-            delete_class_fn(id).await
-        }
+        async move { delete_class_fn(id).await }
     });
-    
+
     Effect::new(move |_| {
         if let Some(result) = delete_action.value().get() {
             match result {
@@ -306,20 +311,20 @@ fn ClassRow(class: Class) -> impl IntoView {
             }
         }
     });
-    
+
     let on_delete_click = move |_| {
         show_delete_modal.set(true);
     };
-    
+
     let on_confirm_delete = move |_| {
         delete_action.dispatch(class_id);
         show_delete_modal.set(false);
     };
-    
+
     let on_cancel_delete = move |_| {
         show_delete_modal.set(false);
     };
-    
+
     let start_session_href = format!("/classes/qr?id={}&origin=classes", class_id);
     let view_session_href = start_session_href.clone();
     let start_session_action = Action::new(move |id: &i64| {
@@ -355,7 +360,7 @@ fn ClassRow(class: Class) -> impl IntoView {
 
     let session_check = Resource::new(
         move || class_id,
-        |id| async move { get_active_class_session_fn(id).await }
+        |id| async move { get_active_class_session_fn(id).await },
     );
 
     Effect::new({
@@ -375,7 +380,7 @@ fn ClassRow(class: Class) -> impl IntoView {
             }
         }
     });
-    
+
     let duration_display = {
         let minutes = class.duration_minutes.max(15);
         if minutes % 60 == 0 {
@@ -391,7 +396,7 @@ fn ClassRow(class: Class) -> impl IntoView {
                 <td>
                     <div class="class-cell">
                         <div class="class-title">{class.title.clone()}</div>
-                        
+
                     </div>
                 </td>
                 <td>
@@ -408,7 +413,7 @@ fn ClassRow(class: Class) -> impl IntoView {
                 <td>
                     <div class="venue-cell">
                         <div>{class.venue.clone().unwrap_or_else(|| "TBA".to_string())}</div>
-                        
+
                     </div>
                 </td>
                 <td>
@@ -436,21 +441,21 @@ fn ClassRow(class: Class) -> impl IntoView {
                             <span>"✏"</span>
                             "Edit"
                         </A>
-                        <button 
-                            class="btn-icon remove" 
+                        <button
+                            class="btn-icon remove"
                             on:click=on_delete_click
                             disabled=move || delete_action.pending().get()
                         >
-                            {move || if delete_action.pending().get() { 
-                                "⏳".to_string() 
-                            } else { 
-                                "🗑 Remove".to_string() 
+                            {move || if delete_action.pending().get() {
+                                "⏳".to_string()
+                            } else {
+                                "🗑 Remove".to_string()
                             }}
                         </button>
                     </div>
                 </td>
             </tr>
-            
+
             <Show when=move || show_delete_modal.get()>
                 <div class="modal-overlay" on:click=move |_| show_delete_modal.set(false)>
                     <div class="modal-content" on:click=|e| e.stop_propagation()>

@@ -1,11 +1,14 @@
 use chrono::{Duration, Local, NaiveDate, NaiveTime};
 use leptos::prelude::*;
 use leptos_router::components::A;
-use leptos_router::hooks::{use_query_map, use_navigate};
+use leptos_router::hooks::{use_navigate, use_query_map};
 use qrcode::{render::svg, QrCode};
 use urlencoding::encode;
 
-use crate::routes::{class_functions::{get_class_fn, get_active_class_session_fn, end_class_session_fn}, helpers::build_return_path};
+use crate::routes::{
+    class_functions::{end_class_session_fn, get_active_class_session_fn, get_class_fn},
+    helpers::build_return_path,
+};
 
 fn format_date_label(date_str: &str) -> (String, String) {
     if let Ok(date) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
@@ -66,9 +69,8 @@ pub fn ClassQrPage() -> impl IntoView {
             .unwrap_or(0)
     });
 
-    let origin_signal = Signal::derive(move || {
-        query.with(|q| q.get("origin").map(|s| s.to_string()))
-    });
+    let origin_signal =
+        Signal::derive(move || query.with(|q| q.get("origin").map(|s| s.to_string())));
 
     let last_return_path = RwSignal::new(String::new());
 
@@ -88,7 +90,7 @@ pub fn ClassQrPage() -> impl IntoView {
 
     let session_resource = Resource::new(
         move || class_id.get(),
-        |id| async move { get_active_class_session_fn(id).await }
+        |id| async move { get_active_class_session_fn(id).await },
     );
 
     let end_session_action = Action::new(move |session_id: &i64| {
@@ -97,26 +99,38 @@ pub fn ClassQrPage() -> impl IntoView {
     });
     let end_session_pending = end_session_action.pending();
 
-    Effect::new({
-        let navigate = navigate.clone();
-        let last_return_path = last_return_path.clone();
-        move |_| {
-            if let Some(result) = end_session_action.value().get() {
-                match result {
-                    Ok(response) if response.success => {
+    Effect::new(move |_| {
+        if let Some(result) = end_session_action.value().get() {
+            leptos::logging::log!("=== END SESSION RESPONSE ===");
+            match result {
+                Ok(response) => {
+                    leptos::logging::log!("Success: {}", response.success);
+                    leptos::logging::log!("Message: {}", response.message);
+
+                    if response.success {
                         let dest = last_return_path.get();
+                        leptos::logging::log!("Navigating to: {}", dest);
+
                         if !dest.is_empty() {
-                            navigate(&dest, Default::default());
+                            // Clone navigate for the timeout closure
+                            let nav = navigate.clone();
+                            // Add a small delay to ensure state updates
+                            set_timeout(
+                                move || {
+                                    nav(&dest, Default::default());
+                                },
+                                std::time::Duration::from_millis(100),
+                            );
                         }
-                    }
-                    Ok(response) => {
-                        leptos::logging::log!("End session failed: {}", response.message);
-                    }
-                    Err(e) => {
-                        leptos::logging::log!("End session error: {}", e);
+                    } else {
+                        leptos::logging::log!("❌ End session failed: {}", response.message);
                     }
                 }
+                Err(e) => {
+                    leptos::logging::log!("❌ End session error: {}", e);
+                }
             }
+            leptos::logging::log!("===========================");
         }
     });
 
@@ -145,8 +159,19 @@ pub fn ClassQrPage() -> impl IntoView {
                                     });
                                     let session_payload = active_session
                                         .as_ref()
-                                        .map(|s| format!("session:{}:class:{}", s.session_id, class.class_id))
-                                        .unwrap_or_else(|| format!("class:{}:inactive", class.class_id));
+                                        .map(|s| {
+                                            let payload = format!("session:{}:class:{}", s.session_id, class.class_id);
+                                            leptos::logging::log!("=== QR CODE DEBUG ===");
+                                            leptos::logging::log!("Session ID: {}", s.session_id);
+                                            leptos::logging::log!("Class ID: {}", class.class_id);
+                                            leptos::logging::log!("Full Payload: {}", payload);
+                                            leptos::logging::log!("====================");
+                                            payload
+                                        })
+                                        .unwrap_or_else(|| {
+                                            leptos::logging::log!("❌ NO ACTIVE SESSION - QR will be invalid");
+                                            format!("class:{}:inactive", class.class_id)
+                                        });
                                     let qr_svg = if active_session.is_some() {
                                         build_qr_svg(&session_payload, 220).unwrap_or_default()
                                     } else {
@@ -246,6 +271,9 @@ pub fn ClassQrPage() -> impl IntoView {
                                                             class="btn btn-danger"
                                                             disabled=move || end_session_pending.get()
                                                             on:click=move |_| {
+                                                                leptos::logging::log!("🔴 END SESSION CLICKED");
+                                                                leptos::logging::log!("Session ID: {}", session_id);
+                                                                leptos::logging::log!("Return path: {}", return_path_clone.clone());
                                                                 last_return_path.set(return_path_clone.clone());
                                                                 end_session_action.dispatch(session_id);
                                                             }
@@ -279,9 +307,8 @@ pub fn ClassQrFullscreenPage() -> impl IntoView {
             .unwrap_or(0)
     });
 
-    let origin_signal = Signal::derive(move || {
-        query.with(|q| q.get("origin").map(|s| s.to_string()))
-    });
+    let origin_signal =
+        Signal::derive(move || query.with(|q| q.get("origin").map(|s| s.to_string())));
 
     let last_return_path = RwSignal::new(String::new());
 
@@ -301,7 +328,7 @@ pub fn ClassQrFullscreenPage() -> impl IntoView {
 
     let session_resource = Resource::new(
         move || class_id.get(),
-        |id| async move { get_active_class_session_fn(id).await }
+        |id| async move { get_active_class_session_fn(id).await },
     );
 
     let end_session_action = Action::new(move |session_id: &i64| {
@@ -310,26 +337,34 @@ pub fn ClassQrFullscreenPage() -> impl IntoView {
     });
     let end_session_pending = end_session_action.pending();
 
-    Effect::new({
-        let navigate = navigate.clone();
-        let last_return_path = last_return_path.clone();
-        move |_| {
-            if let Some(result) = end_session_action.value().get() {
-                match result {
-                    Ok(response) if response.success => {
+    Effect::new(move |_| {
+        if let Some(result) = end_session_action.value().get() {
+            leptos::logging::log!("=== END SESSION RESPONSE (FULLSCREEN) ===");
+            match result {
+                Ok(response) => {
+                    leptos::logging::log!("Success: {}", response.success);
+                    leptos::logging::log!("Message: {}", response.message);
+
+                    if response.success {
                         let dest = last_return_path.get();
+                        leptos::logging::log!("Navigating to: {}", dest);
+
                         if !dest.is_empty() {
-                            navigate(&dest, Default::default());
+                            let nav = navigate.clone();
+                            set_timeout(
+                                move || {
+                                    nav(&dest, Default::default());
+                                },
+                                std::time::Duration::from_millis(100),
+                            );
                         }
                     }
-                    Ok(response) => {
-                        leptos::logging::log!("End session failed: {}", response.message);
-                    }
-                    Err(e) => {
-                        leptos::logging::log!("End session error: {}", e);
-                    }
+                }
+                Err(e) => {
+                    leptos::logging::log!("❌ End session error: {}", e);
                 }
             }
+            leptos::logging::log!("===========================");
         }
     });
 
@@ -352,8 +387,19 @@ pub fn ClassQrFullscreenPage() -> impl IntoView {
                                 });
                                 let session_payload = active_session
                                     .as_ref()
-                                    .map(|s| format!("session:{}:class:{}", s.session_id, class.class_id))
-                                    .unwrap_or_else(|| format!("class:{}:inactive", class.class_id));
+                                    .map(|s| {
+                                        let payload = format!("session:{}:class:{}", s.session_id, class.class_id);
+                                        leptos::logging::log!("=== QR CODE DEBUG ===");
+                                        leptos::logging::log!("Session ID: {}", s.session_id);
+                                        leptos::logging::log!("Class ID: {}", class.class_id);
+                                        leptos::logging::log!("Full Payload: {}", payload);
+                                        leptos::logging::log!("====================");
+                                        payload
+                                    })
+                                    .unwrap_or_else(|| {
+                                        leptos::logging::log!("❌ NO ACTIVE SESSION - QR will be invalid");
+                                        format!("class:{}:inactive", class.class_id)
+                                    });
                                 let qr_svg = if active_session.is_some() {
                                     build_qr_svg(&session_payload, 360).unwrap_or_default()
                                 } else {
@@ -382,6 +428,9 @@ pub fn ClassQrFullscreenPage() -> impl IntoView {
                                                         class="btn btn-danger"
                                                         disabled=move || end_session_pending.get()
                                                         on:click=move |_| {
+                                                            leptos::logging::log!("🔴 END SESSION CLICKED");
+                                                            leptos::logging::log!("Session ID: {}", session_id);
+                                                            leptos::logging::log!("Return path: {}", return_path_clone.clone());
                                                             last_return_path.set(return_path_clone.clone());
                                                             end_session_action.dispatch(session_id);
                                                         }

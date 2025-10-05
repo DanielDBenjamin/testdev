@@ -1,9 +1,11 @@
+use crate::routes::class_functions::{
+    delete_class_fn, get_class_fn, rewrite_recurring_series_fn, update_class_fn,
+};
+use crate::routes::helpers::build_return_path;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use leptos_router::components::A;
 use leptos_router::hooks::{use_navigate, use_query_map};
-use crate::routes::class_functions::{get_class_fn, update_class_fn, rewrite_recurring_series_fn, delete_class_fn};
-use crate::routes::helpers::build_return_path;
 
 #[component]
 pub fn EditClass() -> impl IntoView {
@@ -11,13 +13,16 @@ pub fn EditClass() -> impl IntoView {
     let query = use_query_map();
     let query_for_id = query.clone();
     let class_id = Signal::derive(move || {
-        query_for_id.with(|q| q.get("id").and_then(|id| id.parse::<i64>().ok()).unwrap_or(0))
+        query_for_id.with(|q| {
+            q.get("id")
+                .and_then(|id| id.parse::<i64>().ok())
+                .unwrap_or(0)
+        })
     });
     let query_for_origin = query.clone();
-    let origin = Signal::derive(move || {
-        query_for_origin.with(|q| q.get("origin").map(|s| s.to_string()))
-    });
-    
+    let origin =
+        Signal::derive(move || query_for_origin.with(|q| q.get("origin").map(|s| s.to_string())));
+
     let title = RwSignal::new(String::new());
     let venue = RwSignal::new(String::new());
     let desc = RwSignal::new(String::new());
@@ -41,7 +46,7 @@ pub fn EditClass() -> impl IntoView {
         let module_val = module_code_for_return.get();
         build_return_path(origin_val, &module_val)
     });
-    
+
     // Load class data
     let class_resource = Resource::new(
         move || class_id.get(),
@@ -69,7 +74,7 @@ pub fn EditClass() -> impl IntoView {
             recurring.set(rec.clone().unwrap_or_else(|| "No repeat".to_string()));
             original_recurring.set(rec);
             date.set(class.date.clone());
-            
+
             // Parse time
             let parts: Vec<&str> = class.time.split(':').collect();
             if parts.len() >= 2 {
@@ -119,21 +124,33 @@ pub fn EditClass() -> impl IntoView {
     let on_submit = move |_| {
         message.set(String::new());
         success.set(false);
-        
+
         if title.get().trim().is_empty() {
             message.set("Please enter a class title".to_string());
             return;
         }
-        
+
         if date.get().trim().is_empty() {
             message.set("Please select a date".to_string());
             return;
         }
-        
+
         let time_str = format!("{}:{}", hour.get(), minute.get());
-        let venue_val = if venue.get().trim().is_empty() { None } else { Some(venue.get()) };
-        let desc_val = if desc.get().trim().is_empty() { None } else { Some(desc.get()) };
-        let recurring_val = if recurring.get() == "No repeat" { None } else { Some(recurring.get()) };
+        let venue_val = if venue.get().trim().is_empty() {
+            None
+        } else {
+            Some(venue.get())
+        };
+        let desc_val = if desc.get().trim().is_empty() {
+            None
+        } else {
+            Some(desc.get())
+        };
+        let recurring_val = if recurring.get() == "No repeat" {
+            None
+        } else {
+            Some(recurring.get())
+        };
         let current_class_id = class_id.get();
         let current_title = title.get();
         let current_date = date.get();
@@ -143,14 +160,17 @@ pub fn EditClass() -> impl IntoView {
         let orig_title = original_title.get();
         let count_val = if recurring.get() != "No repeat" {
             recurrence_count.get().parse::<i32>().ok()
-        } else { None };
+        } else {
+            None
+        };
         let return_to = return_path.get();
         let duration_minutes = duration.get().parse::<i32>().unwrap_or(90).max(15);
 
         spawn_local(async move {
             // If recurrence pattern changed, rewrite the series; otherwise update just this class
             let changed_recurrence = recurring_val != original_rec;
-            let should_rewwrite = changed_recurrence || (recurring_val.is_some() && count_val.is_some());
+            let should_rewwrite =
+                changed_recurrence || (recurring_val.is_some() && count_val.is_some());
             let resp = if should_rewwrite {
                 rewrite_recurring_series_fn(
                     current_class_id,
@@ -165,7 +185,8 @@ pub fn EditClass() -> impl IntoView {
                     duration_minutes,
                     recurring_val.clone(),
                     count_val,
-                ).await
+                )
+                .await
             } else {
                 update_class_fn(
                     current_class_id,
@@ -176,7 +197,8 @@ pub fn EditClass() -> impl IntoView {
                     duration_minutes,
                     venue_val,
                     recurring_val,
-                ).await
+                )
+                .await
             };
 
             match resp {
@@ -226,7 +248,7 @@ pub fn EditClass() -> impl IntoView {
 
                                         <label class="label" style="margin-top:16px;">"Description"</label>
                                         <textarea class="textarea" placeholder="Enter a class description" bind:value=desc></textarea>
-                                        
+
                                     <label class="label" style="margin-top:16px;">"Recurring"</label>
                                     <select class="input" bind:value=recurring>
                                         <option selected>"No repeat"</option>
@@ -240,10 +262,10 @@ pub fn EditClass() -> impl IntoView {
                                         <div style="margin-top:10px;">
                                             <label class="label">"Number of Occurrences"</label>
                                             <div style="display:flex; align-items:center; gap:12px;">
-                                                <input 
-                                                    type="number" 
-                                                    class="input" 
-                                                    min="2" 
+                                                <input
+                                                    type="number"
+                                                    class="input"
+                                                    min="2"
                                                     max="52"
                                                     bind:value=recurrence_count
                                                     style="max-width:120px;"
@@ -261,7 +283,7 @@ pub fn EditClass() -> impl IntoView {
                                                 {move || {
                                                     let count = recurrence_count.get().parse::<i32>().unwrap_or(8);
                                                     let pattern = recurring.get();
-                                                    format!("This will create {} {} class instances", count, 
+                                                    format!("This will create {} {} class instances", count,
                                                         match pattern.as_str() {
                                                             "Daily" => "daily",
                                                             "Weekly" => "weekly",
@@ -274,12 +296,12 @@ pub fn EditClass() -> impl IntoView {
                                         </div>
                                     </Show>
                                 </div>
-                                    
+
 
                                     <aside class="form-side">
                                         <label class="label">"Date"</label>
                                         <input class="input" type="date" bind:value=date />
-                                        
+
                                         <label class="label" style="margin-top:16px;">"Enter time"</label>
                                         <div class="time-picker">
                                             <div class="time-box">

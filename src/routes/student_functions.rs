@@ -40,9 +40,9 @@ pub struct StudentsListResponse {
 pub async fn enroll_student(
     request: EnrollStudentRequest,
 ) -> Result<EnrollmentResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     // Check if student exists
     let student = sqlx::query_as::<_, (i64, String, String, String)>(
@@ -55,21 +55,22 @@ pub async fn enroll_student(
 
     let student = match student {
         Some(s) => s,
-        None => return Ok(EnrollmentResponse {
-            success: false,
-            message: "Student not found with this email address".to_string(),
-            student: None,
-        }),
+        None => {
+            return Ok(EnrollmentResponse {
+                success: false,
+                message: "Student not found with this email address".to_string(),
+                student: None,
+            })
+        }
     };
 
     // Check if module exists
-    let module_exists = sqlx::query_scalar::<_, bool>(
-        "SELECT EXISTS(SELECT 1 FROM modules WHERE moduleCode = ?)"
-    )
-    .bind(&request.module_code)
-    .fetch_one(&pool)
-    .await
-    .map_err(|e| ServerFnError::new(format!("Database error: {}", e)))?;
+    let module_exists =
+        sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM modules WHERE moduleCode = ?)")
+            .bind(&request.module_code)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| ServerFnError::new(format!("Database error: {}", e)))?;
 
     if !module_exists {
         return Ok(EnrollmentResponse {
@@ -126,9 +127,9 @@ pub async fn enroll_student(
 pub async fn get_module_students(
     module_code: String,
 ) -> Result<StudentsListResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     let students = sqlx::query_as::<_, (i64, String, String, String)>(
         r#"
@@ -137,7 +138,7 @@ pub async fn get_module_students(
         INNER JOIN module_students ms ON u.emailAddress = ms.studentEmailAddress
         WHERE ms.moduleCode = ?
         ORDER BY u.surname, u.name
-        "#
+        "#,
     )
     .bind(&module_code)
     .fetch_all(&pool)
@@ -147,12 +148,15 @@ pub async fn get_module_students(
     Ok(StudentsListResponse {
         success: true,
         message: "Students fetched successfully".to_string(),
-        students: students.into_iter().map(|(id, name, surname, email)| StudentInfo {
-            user_id: id,
-            name,
-            surname,
-            email_address: email,
-        }).collect(),
+        students: students
+            .into_iter()
+            .map(|(id, name, surname, email)| StudentInfo {
+                user_id: id,
+                name,
+                surname,
+                email_address: email,
+            })
+            .collect(),
     })
 }
 
@@ -162,18 +166,17 @@ pub async fn unenroll_student(
     module_code: String,
     student_email: String,
 ) -> Result<EnrollmentResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
-    let result = sqlx::query(
-        "DELETE FROM module_students WHERE moduleCode = ? AND studentEmailAddress = ?"
-    )
-    .bind(&module_code)
-    .bind(&student_email)
-    .execute(&pool)
-    .await
-    .map_err(|e| ServerFnError::new(format!("Failed to unenroll student: {}", e)))?;
+    let result =
+        sqlx::query("DELETE FROM module_students WHERE moduleCode = ? AND studentEmailAddress = ?")
+            .bind(&module_code)
+            .bind(&student_email)
+            .execute(&pool)
+            .await
+            .map_err(|e| ServerFnError::new(format!("Failed to unenroll student: {}", e)))?;
 
     if result.rows_affected() == 0 {
         return Ok(EnrollmentResponse {
@@ -196,9 +199,9 @@ pub async fn bulk_enroll_students(
     module_code: String,
     student_emails: Vec<String>,
 ) -> Result<EnrollmentResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     let now = Utc::now().to_rfc3339();
     let mut enrolled_count = 0;
@@ -212,7 +215,7 @@ pub async fn bulk_enroll_students(
 
         // Check if student exists
         let student_exists = sqlx::query_scalar::<_, bool>(
-            "SELECT EXISTS(SELECT 1 FROM users WHERE emailAddress = ? AND role = 'student')"
+            "SELECT EXISTS(SELECT 1 FROM users WHERE emailAddress = ? AND role = 'student')",
         )
         .bind(&email)
         .fetch_one(&pool)
@@ -255,7 +258,11 @@ pub async fn bulk_enroll_students(
     let message = if errors.is_empty() {
         format!("Successfully enrolled {} student(s)", enrolled_count)
     } else {
-        format!("Enrolled {} student(s). Errors: {}", enrolled_count, errors.join(", "))
+        format!(
+            "Enrolled {} student(s). Errors: {}",
+            enrolled_count,
+            errors.join(", ")
+        )
     };
 
     Ok(EnrollmentResponse {

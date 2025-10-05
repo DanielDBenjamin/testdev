@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 #[component]
-pub fn StatTile<V>(value: V, label: &'static str) -> impl IntoView 
+pub fn StatTile<V>(value: V, label: &'static str) -> impl IntoView
 where
     V: Fn() -> String + 'static + Send,
 {

@@ -1,8 +1,8 @@
-use leptos::prelude::*;
 use crate::types::UserProfile;
+use leptos::prelude::*;
 
 #[cfg(feature = "ssr")]
-use crate::database::{init_db_pool};
+use crate::database::init_db_pool;
 #[cfg(feature = "ssr")]
 use chrono::Utc;
 
@@ -51,9 +51,9 @@ pub async fn update_profile(
         });
     }
 
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     let now = Utc::now().to_rfc3339();
 
@@ -76,7 +76,7 @@ pub async fn update_profile(
 
     // Fetch updated user
     let user = sqlx::query_as::<_, (i64, String, String, String, String)>(
-        "SELECT userID, name, surname, emailAddress, role FROM users WHERE userID = ?"
+        "SELECT userID, name, surname, emailAddress, role FROM users WHERE userID = ?",
     )
     .bind(request.user_id)
     .fetch_one(&pool)

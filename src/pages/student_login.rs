@@ -1,12 +1,11 @@
-
-use leptos::prelude::*;
 use leptos::ev::SubmitEvent;
+use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
 
 #[component]
 pub fn StudentLoginPage() -> impl IntoView {
     let navigate = use_navigate();
-    
+
     // Create signals for form inputs
     let (student_id, set_student_id) = signal(String::new());
     let (password, set_password) = signal(String::new());
@@ -15,12 +14,15 @@ pub fn StudentLoginPage() -> impl IntoView {
     // Handle form submission
     let handle_submit = move |ev: SubmitEvent| {
         ev.prevent_default();
-        
+
         let student_id_value = student_id.get();
         let _password_value = password.get();
-        
-        leptos::logging::log!("Login attempt - Student ID: {}, Password: [hidden]", student_id_value);
-        
+
+        leptos::logging::log!(
+            "Login attempt - Student ID: {}, Password: [hidden]",
+            student_id_value
+        );
+
         // Here you would typically make an API call to authenticate
         // For now, just navigate to home page
         let navigate = navigate.clone();

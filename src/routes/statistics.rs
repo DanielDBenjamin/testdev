@@ -1,7 +1,7 @@
-use leptos::prelude::*;
 use crate::routes::stats_functions::*;
 use crate::user_context::get_current_user;
 use chrono::Utc;
+use leptos::prelude::*;
 
 #[component]
 pub fn Statistics() -> impl IntoView {
@@ -23,81 +23,113 @@ pub fn Statistics() -> impl IntoView {
         |email| async move {
             match email {
                 Some(email) => get_module_options(email).await,
-                None => Err(ServerFnError::new("Not logged in".to_string()))
+                None => Err(ServerFnError::new("Not logged in".to_string())),
             }
-        }
+        },
     );
 
     // Overview numbers
     let overview = Resource::new(
-        move || (current_user.get().map(|u| u.email_address), selected_module.get()),
+        move || {
+            (
+                current_user.get().map(|u| u.email_address),
+                selected_module.get(),
+            )
+        },
         |(email, module)| async move {
             match email {
                 Some(email) => get_overall_stats(email, module, None).await,
-                None => Err(ServerFnError::new("Not logged in".to_string()))
+                None => Err(ServerFnError::new("Not logged in".to_string())),
             }
-        }
+        },
     );
 
     // Trend points (weekly within month, or monthly YTD)
     let trend = Resource::new(
-        move || (
-            current_user.get().map(|u| u.email_address),
-            selected_module.get(),
-            timeframe.get(),
-            selected_month.get(),
-        ),
+        move || {
+            (
+                current_user.get().map(|u| u.email_address),
+                selected_module.get(),
+                timeframe.get(),
+                selected_month.get(),
+            )
+        },
         |(email, module, tf, month)| async move {
             match email {
                 Some(email) => get_weekly_trends(email, module, Some(tf), Some(month)).await,
-                None => Err(ServerFnError::new("Not logged in".to_string()))
+                None => Err(ServerFnError::new("Not logged in".to_string())),
             }
-        }
+        },
     );
 
     // Monthly trend resource (for delta comparisons even when viewing Weekly)
     let monthly_trend = Resource::new(
-        move || (current_user.get().map(|u| u.email_address), selected_module.get()),
+        move || {
+            (
+                current_user.get().map(|u| u.email_address),
+                selected_module.get(),
+            )
+        },
         |(email, module)| async move {
             match email {
-                Some(email) => get_weekly_trends(email, module, Some("Monthly".to_string()), None).await,
-                None => Err(ServerFnError::new("Not logged in".to_string()))
+                Some(email) => {
+                    get_weekly_trends(email, module, Some("Monthly".to_string()), None).await
+                }
+                None => Err(ServerFnError::new("Not logged in".to_string())),
             }
-        }
+        },
     );
 
     // Most missed modules (for all-modules view)
     let missed = Resource::new(
-        move || (current_user.get().map(|u| u.email_address), selected_module.get()),
+        move || {
+            (
+                current_user.get().map(|u| u.email_address),
+                selected_module.get(),
+            )
+        },
         |(email, module)| async move {
             match email {
                 Some(email) => get_most_missed_modules(email, module).await,
-                None => Err(ServerFnError::new("Not logged in".to_string()))
+                None => Err(ServerFnError::new("Not logged in".to_string())),
             }
-        }
+        },
     );
 
     // Student attendance for selected module (overall)
     let students_attendance = Resource::new(
-        move || (current_user.get().map(|u| u.email_address), selected_module.get()),
+        move || {
+            (
+                current_user.get().map(|u| u.email_address),
+                selected_module.get(),
+            )
+        },
         |(email, module)| async move {
             match (email, module) {
                 (Some(email), Some(code)) => get_module_student_attendance(email, code, None).await,
-                _ => Err(ServerFnError::new("No context".to_string()))
+                _ => Err(ServerFnError::new("No context".to_string())),
             }
-        }
+        },
     );
 
     let search_students = RwSignal::new(String::new());
     let (selected_student, set_selected_student) = signal(None::<(i64, String, String, f64)>);
     let student_detail = Resource::new(
-        move || (current_user.get().map(|u| u.email_address), selected_module.get(), selected_student.get().map(|t| t.0)),
+        move || {
+            (
+                current_user.get().map(|u| u.email_address),
+                selected_module.get(),
+                selected_student.get().map(|t| t.0),
+            )
+        },
         |(email, module, student_id)| async move {
             match (email, module, student_id) {
-                (Some(email), Some(code), Some(sid)) => get_student_module_attendance_detail(email, code, sid).await,
-                _ => Err(ServerFnError::new("No student selected".to_string()))
+                (Some(email), Some(code), Some(sid)) => {
+                    get_student_module_attendance_detail(email, code, sid).await
+                }
+                _ => Err(ServerFnError::new("No student selected".to_string())),
             }
-        }
+        },
     );
 
     view! {

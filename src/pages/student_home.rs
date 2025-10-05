@@ -1,8 +1,8 @@
+use crate::components::QrScanner;
+use crate::routes::class_functions::record_session_attendance_fn;
+use crate::user_context::get_current_user;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::components::QrScanner;
-use crate::user_context::get_current_user;
-use crate::routes::class_functions::record_session_attendance_fn;
 use leptos_router::hooks::use_navigate;
 
 #[component]
@@ -43,7 +43,10 @@ pub fn StudentHomePage() -> impl IntoView {
                     }
                 });
             } else {
-                feedback.set(Some((false, "Please log in as a student to record attendance.".to_string())));
+                feedback.set(Some((
+                    false,
+                    "Please log in as a student to record attendance.".to_string(),
+                )));
             }
         })
     };
@@ -123,7 +126,7 @@ pub fn StudentHomePage() -> impl IntoView {
                     </svg>
                     <span class="student-nav-label">"Home"</span>
                 </button>
-                
+
                 <button class="student-nav-item student-nav-item-scan" on:click=open_scanner>
                     <div class="student-scan-button">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -135,7 +138,7 @@ pub fn StudentHomePage() -> impl IntoView {
                     </div>
                     <span class="student-nav-label">"Scan"</span>
                 </button>
-                
+
                 <button class="student-nav-item" on:click=go_to_statistics>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="20" x2="18" y2="10"></line>

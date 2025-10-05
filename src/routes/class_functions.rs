@@ -1,12 +1,19 @@
-use leptos::prelude::*;
-use crate::database::classes::{Class, CreateClassRequest, UpdateClassRequest};
 use crate::database::class_sessions::ClassSession;
+use crate::database::classes::{Class, CreateClassRequest, UpdateClassRequest};
 use gloo_net::http::Request;
+use leptos::prelude::*;
 
 #[cfg(feature = "ssr")]
-use crate::database::{init_db_pool, classes::{create_class, get_module_classes, get_lecturer_classes, delete_class, update_class, get_class_by_id}, class_sessions::{create_session, end_session, get_active_session, get_session_by_id}};
+use crate::database::{
+    class_sessions::{create_session, end_session, get_active_session, get_session_by_id},
+    classes::{
+        create_class, delete_class, get_class_by_id, get_lecturer_classes, get_module_classes,
+        update_class,
+    },
+    init_db_pool,
+};
 #[cfg(feature = "ssr")]
-use chrono::{NaiveDate, NaiveTime, Local, Duration as ChronoDuration, Utc, DateTime};
+use chrono::{DateTime, Duration as ChronoDuration, Local, NaiveDate, NaiveTime, Utc};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ClassResponse {
@@ -37,10 +44,15 @@ pub struct RecordAttendanceResponse {
 }
 
 #[cfg(feature = "ssr")]
-async fn ensure_session_state(pool: &sqlx::SqlitePool, class_id: i64) -> Result<Option<ClassSession>, String> {
+async fn ensure_session_state(
+    pool: &sqlx::SqlitePool,
+    class_id: i64,
+) -> Result<Option<ClassSession>, String> {
     let class = get_class_by_id(pool, class_id).await?;
-    let date = NaiveDate::parse_from_str(&class.date, "%Y-%m-%d").map_err(|e| format!("Invalid class date: {}", e))?;
-    let time = NaiveTime::parse_from_str(&class.time, "%H:%M").map_err(|e| format!("Invalid class time: {}", e))?;
+    let date = NaiveDate::parse_from_str(&class.date, "%Y-%m-%d")
+        .map_err(|e| format!("Invalid class date: {}", e))?;
+    let time = NaiveTime::parse_from_str(&class.time, "%H:%M")
+        .map_err(|e| format!("Invalid class time: {}", e))?;
     let start_naive = date.and_time(time);
     let duration_minutes = class.duration_minutes.max(15) as i64;
     let now_naive = Local::now().naive_local();
@@ -68,12 +80,14 @@ async fn ensure_session_state(pool: &sqlx::SqlitePool, class_id: i64) -> Result<
             if now_naive >= expected_end {
                 end_session(pool, existing.session_id).await?;
                 let now_utc = Utc::now().to_rfc3339();
-                sqlx::query("UPDATE classes SET status = 'completed', updated_at = ? WHERE classID = ?")
-                    .bind(&now_utc)
-                    .bind(class_id)
-                    .execute(pool)
-                    .await
-                    .map_err(|e| format!("Failed to update class status: {}", e))?;
+                sqlx::query(
+                    "UPDATE classes SET status = 'completed', updated_at = ? WHERE classID = ?",
+                )
+                .bind(&now_utc)
+                .bind(class_id)
+                .execute(pool)
+                .await
+                .map_err(|e| format!("Failed to update class status: {}", e))?;
                 session = None;
             }
         }
@@ -97,7 +111,7 @@ pub async fn create_class_fn(
 ) -> Result<ClassResponse, ServerFnError> {
     // Add logging
     println!("Creating class for module: '{}'", module_code);
-    
+
     if title.trim().is_empty() {
         return Ok(ClassResponse {
             success: false,
@@ -122,17 +136,17 @@ pub async fn create_class_fn(
         });
     }
 
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
-    
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
+
     // Verify the module exists
     let module_exists = sqlx::query("SELECT 1 FROM modules WHERE moduleCode = ?")
         .bind(&module_code)
         .fetch_optional(&pool)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to check module: {}", e)))?;
-    
+
     if module_exists.is_none() {
         println!("Module '{}' not found in database!", module_code);
         return Ok(ClassResponse {
@@ -145,9 +159,23 @@ pub async fn create_class_fn(
     let request = CreateClassRequest {
         module_code: module_code.clone(),
         title: title.trim().to_string(),
-        venue: venue.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.clone()) }),
-        description: description.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.clone()) }),
-        recurring: recurring.clone().filter(|s| !s.trim().is_empty() && s != "No repeat"),
+        venue: venue.as_ref().and_then(|s| {
+            if s.trim().is_empty() {
+                None
+            } else {
+                Some(s.clone())
+            }
+        }),
+        description: description.as_ref().and_then(|s| {
+            if s.trim().is_empty() {
+                None
+            } else {
+                Some(s.clone())
+            }
+        }),
+        recurring: recurring
+            .clone()
+            .filter(|s| !s.trim().is_empty() && s != "No repeat"),
         date: date.clone(),
         time: time.clone(),
         duration_minutes,
@@ -170,26 +198,38 @@ pub async fn create_class_fn(
     if let Some(recur_pattern) = &recurring {
         if recur_pattern != "No repeat" {
             let count = recurrence_count.unwrap_or(8); // Default to 8 weeks if not specified
-            
+
             // Parse the start date
             if let Ok(start_date) = NaiveDate::parse_from_str(&date, "%Y-%m-%d") {
                 let interval = match recur_pattern.as_str() {
                     "Daily" => ChronoDuration::days(1),
                     "Weekly" => ChronoDuration::weeks(1),
                     "Monthly" => ChronoDuration::days(30), // Approximate
-                    _ => ChronoDuration::weeks(1), // Default to weekly
+                    _ => ChronoDuration::weeks(1),         // Default to weekly
                 };
 
                 // Create additional class instances
                 for i in 1..count {
                     let next_date = start_date + (interval * (i as i32));
                     let next_date_str = next_date.format("%Y-%m-%d").to_string();
-                    
+
                     let recurring_request = CreateClassRequest {
                         module_code: module_code.clone(),
                         title: title.trim().to_string(),
-                        venue: venue.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.clone()) }),
-                        description: description.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.clone()) }),
+                        venue: venue.as_ref().and_then(|s| {
+                            if s.trim().is_empty() {
+                                None
+                            } else {
+                                Some(s.clone())
+                            }
+                        }),
+                        description: description.as_ref().and_then(|s| {
+                            if s.trim().is_empty() {
+                                None
+                            } else {
+                                Some(s.clone())
+                            }
+                        }),
                         recurring: Some(recur_pattern.clone()),
                         date: next_date_str,
                         time: time.clone(),
@@ -225,9 +265,9 @@ pub async fn create_class_fn(
 pub async fn get_module_classes_fn(
     module_code: String,
 ) -> Result<ClassesListResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     match get_module_classes(&pool, &module_code).await {
         Ok(classes) => Ok(ClassesListResponse {
@@ -245,12 +285,10 @@ pub async fn get_module_classes_fn(
 
 /// Delete a class
 #[server(DeleteClass, "/api")]
-pub async fn delete_class_fn(
-    class_id: i64,
-) -> Result<ClassResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+pub async fn delete_class_fn(class_id: i64) -> Result<ClassResponse, ServerFnError> {
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     match delete_class(&pool, class_id).await {
         Ok(_) => Ok(ClassResponse {
@@ -271,9 +309,9 @@ pub async fn delete_class_fn(
 pub async fn get_lecturer_classes_fn(
     lecturer_email: String,
 ) -> Result<ClassesListResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     match get_lecturer_classes(&pool, &lecturer_email).await {
         Ok(classes) => Ok(ClassesListResponse {
@@ -291,15 +329,13 @@ pub async fn get_lecturer_classes_fn(
 
 /// Get a single class by ID
 #[server(GetClass, "/api")]
-pub async fn get_class_fn(
-    class_id: i64,
-) -> Result<ClassResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+pub async fn get_class_fn(class_id: i64) -> Result<ClassResponse, ServerFnError> {
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     let class = sqlx::query_as::<_, crate::database::classes::DbClass>(
-        "SELECT * FROM classes WHERE classID = ?"
+        "SELECT * FROM classes WHERE classID = ?",
     )
     .bind(class_id)
     .fetch_optional(&pool)
@@ -356,9 +392,9 @@ pub async fn update_class_fn(
         });
     }
 
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     let request = UpdateClassRequest {
         title: title.trim().to_string(),
@@ -395,9 +431,9 @@ pub async fn update_recurring_series_fn(
     new_venue: Option<String>,
     new_time: String,
 ) -> Result<ClassResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -446,9 +482,9 @@ pub async fn rewrite_recurring_series_fn(
     new_recurring: Option<String>,
     new_recurrence_count: Option<i32>,
 ) -> Result<ClassResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     // 1) Find all upcoming classes that belong to the original series
     let series_class_ids: Vec<i64> = if let Some(orig_rec) = &original_recurring {
@@ -503,7 +539,11 @@ pub async fn rewrite_recurring_series_fn(
         if id != class_id {
             if let Err(e) = delete_class(&pool, id).await {
                 // Continue but report failure in the message later
-                leptos::logging::log!("Failed to delete class {} while rewriting series: {}", id, e);
+                leptos::logging::log!(
+                    "Failed to delete class {} while rewriting series: {}",
+                    id,
+                    e
+                );
             }
         }
     }
@@ -545,7 +585,8 @@ pub async fn rewrite_recurring_series_fn(
                         Err(e) => {
                             leptos::logging::log!(
                                 "Warning: failed to create rewritten instance {}: {}",
-                                i, e
+                                i,
+                                e
                             );
                         }
                     }
@@ -577,12 +618,12 @@ pub async fn update_class_status_fn(
     class_id: i64,
     status: String,
 ) -> Result<ClassResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     let now = chrono::Utc::now().to_rfc3339();
-    
+
     sqlx::query(
         r#"
         UPDATE classes 
@@ -598,7 +639,7 @@ pub async fn update_class_status_fn(
     .map_err(|e| ServerFnError::new(format!("Failed to update status: {}", e)))?;
 
     let class = sqlx::query_as::<_, crate::database::classes::DbClass>(
-        "SELECT * FROM classes WHERE classID = ?"
+        "SELECT * FROM classes WHERE classID = ?",
     )
     .bind(class_id)
     .fetch_one(&pool)
@@ -613,22 +654,22 @@ pub async fn update_class_status_fn(
 }
 
 #[server(StartClassSession, "/api")]
-pub async fn start_class_session_fn(
-    class_id: i64,
-) -> Result<ClassSessionResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+pub async fn start_class_session_fn(class_id: i64) -> Result<ClassSessionResponse, ServerFnError> {
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     match create_session(&pool, class_id, None).await {
         Ok(session) => {
             let now = Utc::now().to_rfc3339();
-            sqlx::query("UPDATE classes SET status = 'in_progress', updated_at = ? WHERE classID = ?")
-                .bind(&now)
-                .bind(class_id)
-                .execute(&pool)
-                .await
-                .map_err(|e| ServerFnError::new(format!("Failed to update class status: {}", e)))?;
+            sqlx::query(
+                "UPDATE classes SET status = 'in_progress', updated_at = ? WHERE classID = ?",
+            )
+            .bind(&now)
+            .bind(class_id)
+            .execute(&pool)
+            .await
+            .map_err(|e| ServerFnError::new(format!("Failed to update class status: {}", e)))?;
 
             Ok(ClassSessionResponse {
                 success: true,
@@ -647,22 +688,48 @@ pub async fn start_class_session_fn(
 }
 
 #[server(EndClassSession, "/api")]
-pub async fn end_class_session_fn(
-    session_id: i64,
-) -> Result<ClassSessionResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+pub async fn end_class_session_fn(session_id: i64) -> Result<ClassSessionResponse, ServerFnError> {
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     match end_session(&pool, session_id).await {
         Ok(session) => {
             let now = Utc::now().to_rfc3339();
-            sqlx::query("UPDATE classes SET status = 'completed', updated_at = ? WHERE classID = ?")
-                .bind(&now)
-                .bind(session.class_id)
-                .execute(&pool)
+            sqlx::query(
+                "UPDATE classes SET status = 'completed', updated_at = ? WHERE classID = ?",
+            )
+            .bind(&now)
+            .bind(session.class_id)
+            .execute(&pool)
+            .await
+            .map_err(|e| ServerFnError::new(format!("Failed to update class status: {}", e)))?;
+
+            // Ensure students who didn't scan are marked absent to keep attendance complete.
+            let class_info = get_class_by_id(&pool, session.class_id)
                 .await
-                .map_err(|e| ServerFnError::new(format!("Failed to update class status: {}", e)))?;
+                .map_err(|e| ServerFnError::new(format!("Failed to fetch class info: {}", e)))?;
+
+            let absent_recorded_at = Utc::now().to_rfc3339();
+            sqlx::query(
+                r#"
+                INSERT INTO attendance (studentID, classID, status, recorded_at, notes)
+                SELECT u.userID, ?, 'absent', ?, 'Marked absent when session ended'
+                FROM users u
+                INNER JOIN module_students ms ON ms.studentEmailAddress = u.emailAddress
+                WHERE ms.moduleCode = ? AND u.role = 'student'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM attendance a WHERE a.classID = ? AND a.studentID = u.userID
+                  )
+                "#,
+            )
+            .bind(session.class_id)
+            .bind(&absent_recorded_at)
+            .bind(&class_info.module_code)
+            .bind(session.class_id)
+            .execute(&pool)
+            .await
+            .map_err(|e| ServerFnError::new(format!("Failed to mark absentees: {}", e)))?;
 
             Ok(ClassSessionResponse {
                 success: true,
@@ -684,11 +751,13 @@ pub async fn end_class_session_fn(
 pub async fn get_active_class_session_fn(
     class_id: i64,
 ) -> Result<ClassSessionResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
-    let session = ensure_session_state(&pool, class_id).await.map_err(|e| ServerFnError::new(e))?;
+    let session = ensure_session_state(&pool, class_id)
+        .await
+        .map_err(|e| ServerFnError::new(e))?;
     let class_status = get_class_by_id(&pool, class_id)
         .await
         .map(|c| c.status)
@@ -716,13 +785,13 @@ pub async fn save_single_instance(
     class_data: web_sys::FormData,
 ) -> Result<(), ServerFnError> {
     let url = format!("/api/classes/{}", class_id);
-    
+
     let response = Request::put(&url)
         .body(class_data)?
         .send()
         .await
         .map_err(|e| ServerFnError::new(format!("Request failed: {}", e)))?;
-    
+
     if response.ok() {
         Ok(())
     } else {
@@ -744,13 +813,13 @@ pub async fn save_recurring_series(
     class_data: web_sys::FormData,
 ) -> Result<(), ServerFnError> {
     let url = format!("/api/classes/recurring/{}/from/{}", series_id, class_date);
-    
+
     let response = Request::put(&url)
         .body(class_data)?
         .send()
         .await
         .map_err(|e| ServerFnError::new(format!("Request failed: {}", e)))?;
-    
+
     if response.ok() {
         Ok(())
     } else {
@@ -765,15 +834,14 @@ pub async fn save_recurring_series(
     }
 }
 
-
 #[server(RecordSessionAttendance, "/api")]
 pub async fn record_session_attendance_fn(
     payload: String,
     student_email: String,
 ) -> Result<RecordAttendanceResponse, ServerFnError> {
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     let parts: Vec<&str> = payload.split(':').collect();
     if parts.len() != 4 || parts[0] != "session" || parts[2] != "class" {
@@ -783,10 +851,16 @@ pub async fn record_session_attendance_fn(
         });
     }
 
-    let session_id: i64 = parts[1].parse().map_err(|_| ServerFnError::new("Invalid session id"))?;
-    let class_id: i64 = parts[3].parse().map_err(|_| ServerFnError::new("Invalid class id"))?;
+    let session_id: i64 = parts[1]
+        .parse()
+        .map_err(|_| ServerFnError::new("Invalid session id"))?;
+    let class_id: i64 = parts[3]
+        .parse()
+        .map_err(|_| ServerFnError::new("Invalid class id"))?;
 
-    let _ = ensure_session_state(&pool, class_id).await.map_err(|e| ServerFnError::new(e))?;
+    let _ = ensure_session_state(&pool, class_id)
+        .await
+        .map_err(|e| ServerFnError::new(e))?;
 
     let session = match get_session_by_id(&pool, session_id).await {
         Ok(Some(session)) => session,
@@ -825,13 +899,12 @@ pub async fn record_session_attendance_fn(
         });
     }
 
-    let student_id: Option<i64> = sqlx::query_scalar(
-        "SELECT userID FROM users WHERE emailAddress = ? AND role = 'student'"
-    )
-    .bind(&student_email)
-    .fetch_optional(&pool)
-    .await
-    .map_err(|e| ServerFnError::new(format!("Failed to lookup student: {}", e)))?;
+    let student_id: Option<i64> =
+        sqlx::query_scalar("SELECT userID FROM users WHERE emailAddress = ? AND role = 'student'")
+            .bind(&student_email)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| ServerFnError::new(format!("Failed to lookup student: {}", e)))?;
 
     let student_id = match student_id {
         Some(id) => id,
@@ -846,7 +919,7 @@ pub async fn record_session_attendance_fn(
     let now = Utc::now().to_rfc3339();
 
     let existing: Option<i64> = sqlx::query_scalar(
-        "SELECT attendanceID FROM attendance WHERE classID = ? AND studentID = ?"
+        "SELECT attendanceID FROM attendance WHERE classID = ? AND studentID = ?",
     )
     .bind(class_id)
     .bind(student_id)

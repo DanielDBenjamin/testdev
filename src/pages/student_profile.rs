@@ -1,6 +1,6 @@
+use crate::user_context::{clear_current_user, get_current_user};
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
-use crate::user_context::{clear_current_user, get_current_user};
 
 #[component]
 pub fn StudentProfilePage() -> impl IntoView {
@@ -27,19 +27,22 @@ pub fn StudentProfilePage() -> impl IntoView {
 
     // Get user info from context
     let user_name = move || {
-        current_user.get()
+        current_user
+            .get()
             .map(|u| format!("{} {}", u.name, u.surname))
             .unwrap_or_else(|| "Student".to_string())
     };
 
     let user_email = move || {
-        current_user.get()
+        current_user
+            .get()
             .map(|u| u.email_address.clone())
             .unwrap_or_else(|| "student@university.edu".to_string())
     };
 
     let user_id = move || {
-        current_user.get()
+        current_user
+            .get()
             .map(|u| format!("STU-{:06}", u.user_id))
             .unwrap_or_else(|| "STU-000000".to_string())
     };

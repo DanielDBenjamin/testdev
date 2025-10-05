@@ -1,13 +1,13 @@
+use crate::routes::class_functions::create_class_fn;
 use leptos::prelude::*;
 use leptos_router::components::A;
 use leptos_router::hooks::{use_navigate, use_query_map};
-use crate::routes::class_functions::create_class_fn;
 
 #[component]
 pub fn NewClass() -> impl IntoView {
     let navigate = use_navigate();
     let query = use_query_map();
-    
+
     let title = RwSignal::new(String::new());
     let venue = RwSignal::new(String::new());
     let desc = RwSignal::new(String::new());
@@ -19,54 +19,97 @@ pub fn NewClass() -> impl IntoView {
     let duration = RwSignal::new("90".to_string());
     let message = RwSignal::new(String::new());
     let success = RwSignal::new(false);
-    
+
     // Get module code from URL query params
-    let module_code = move || {
-        query.with(|q| q.get("module").unwrap_or_default())
-    };
-    
-    let create_action = Action::new(move |(module, title_val, venue_val, desc_val, recurring_val, date_val, time_val, duration_val, count): &(String, String, Option<String>, Option<String>, Option<String>, String, String, i32, Option<i32>)| {
-        let module = module.clone();
-        let title_val = title_val.clone();
-        let venue_val = venue_val.clone();
-        let desc_val = desc_val.clone();
-        let recurring_val = recurring_val.clone();
-        let date_val = date_val.clone();
-        let time_val = time_val.clone();
-        let duration_val = *duration_val;
-        let count = *count;
-        async move {
-            create_class_fn(module, title_val, venue_val, desc_val, recurring_val, date_val, time_val, duration_val, count).await
-        }
-    });
+    let module_code = move || query.with(|q| q.get("module").unwrap_or_default());
+
+    let create_action = Action::new(
+        move |(
+            module,
+            title_val,
+            venue_val,
+            desc_val,
+            recurring_val,
+            date_val,
+            time_val,
+            duration_val,
+            count,
+        ): &(
+            String,
+            String,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            String,
+            String,
+            i32,
+            Option<i32>,
+        )| {
+            let module = module.clone();
+            let title_val = title_val.clone();
+            let venue_val = venue_val.clone();
+            let desc_val = desc_val.clone();
+            let recurring_val = recurring_val.clone();
+            let date_val = date_val.clone();
+            let time_val = time_val.clone();
+            let duration_val = *duration_val;
+            let count = *count;
+            async move {
+                create_class_fn(
+                    module,
+                    title_val,
+                    venue_val,
+                    desc_val,
+                    recurring_val,
+                    date_val,
+                    time_val,
+                    duration_val,
+                    count,
+                )
+                .await
+            }
+        },
+    );
 
     let on_submit = move |_| {
         message.set(String::new());
         success.set(false);
-        
+
         let current_module = module_code();
-        
+
         if current_module.is_empty() {
             message.set("No module selected. Please go back and select a module.".to_string());
             return;
         }
-        
+
         if title.get().trim().is_empty() {
             message.set("Please enter a class title".to_string());
             return;
         }
-        
+
         if date.get().trim().is_empty() {
             message.set("Please select a date".to_string());
             return;
         }
-        
+
         let time_str = format!("{}:{}", hour.get(), minute.get());
-        
-        let venue_val = if venue.get().trim().is_empty() { None } else { Some(venue.get()) };
-        let desc_val = if desc.get().trim().is_empty() { None } else { Some(desc.get()) };
-        let recurring_val = if recurring.get() == "No repeat" { None } else { Some(recurring.get()) };
-        
+
+        let venue_val = if venue.get().trim().is_empty() {
+            None
+        } else {
+            Some(venue.get())
+        };
+        let desc_val = if desc.get().trim().is_empty() {
+            None
+        } else {
+            Some(desc.get())
+        };
+        let recurring_val = if recurring.get() == "No repeat" {
+            None
+        } else {
+            Some(recurring.get())
+        };
+
         // Only pass recurrence_count if recurring is enabled
         let count_val = if recurring.get() != "No repeat" {
             // Parse string to i32, default to 8 if invalid
@@ -74,7 +117,7 @@ pub fn NewClass() -> impl IntoView {
         } else {
             None
         };
-    
+
         let duration_val = duration.get().parse::<i32>().unwrap_or(90).max(15);
 
         create_action.dispatch((
@@ -98,13 +141,16 @@ pub fn NewClass() -> impl IntoView {
                     Ok(response) => {
                         message.set(response.message.clone());
                         success.set(response.success);
-                        
+
                         if response.success {
                             let nav = navigate.clone();
                             let mod_code = module_code();
                             set_timeout(
                                 move || {
-                                    nav(&format!("/classes?module={}", mod_code), Default::default());
+                                    nav(
+                                        &format!("/classes?module={}", mod_code),
+                                        Default::default(),
+                                    );
                                 },
                                 std::time::Duration::from_millis(1500),
                             );
@@ -156,10 +202,10 @@ pub fn NewClass() -> impl IntoView {
                             <div style="margin-top:10px;">
                                 <label class="label">"Number of Occurrences"</label>
                                 <div style="display:flex; align-items:center; gap:12px;">
-                                    <input 
-                                        type="number" 
-                                        class="input" 
-                                        min="2" 
+                                    <input
+                                        type="number"
+                                        class="input"
+                                        min="2"
                                         max="52"
                                         bind:value=recurrence_count
                                         style="max-width:120px;"
@@ -177,7 +223,7 @@ pub fn NewClass() -> impl IntoView {
                                     {move || {
                                         let count = recurrence_count.get().parse::<i32>().unwrap_or(8);
                                         let pattern = recurring.get();
-                                        format!("This will create {} {} class instances", count, 
+                                        format!("This will create {} {} class instances", count,
                                             match pattern.as_str() {
                                                 "Daily" => "daily",
                                                 "Weekly" => "weekly",
@@ -194,7 +240,7 @@ pub fn NewClass() -> impl IntoView {
                     <aside class="form-side">
                         <label class="label">"Date"</label>
                         <input class="input" type="date" bind:value=date />
-                        
+
                         <label class="label" style="margin-top:10px;">"Time"</label>
                         <div class="time-picker">
                             <div class="time-box">
@@ -227,15 +273,15 @@ pub fn NewClass() -> impl IntoView {
                 </Show>
 
                 <div class="actions-row">
-                    <button 
-                        class="btn btn-accent" 
+                    <button
+                        class="btn btn-accent"
                         on:click=on_submit
                         disabled=move || create_action.pending().get()
                     >
-                        {move || if create_action.pending().get() { 
-                            "Creating Class...".into_view() 
-                        } else { 
-                            "✓ Save Class".into_view() 
+                        {move || if create_action.pending().get() {
+                            "Creating Class...".into_view()
+                        } else {
+                            "✓ Save Class".into_view()
                         }}
                     </button>
                     <A href="/home" attr:class="btn btn-outline">"× Cancel"</A>
