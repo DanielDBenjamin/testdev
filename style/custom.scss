@@ -465,6 +465,17 @@ html, body {
   }
 }
 
+.student-login-feedback {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #ffe8e6;
+  border: 1px solid #ffb3ad;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  color: #b91c1c;
+  text-align: center;
+}
+
 /* Login footer links */
 .student-login-footer {
   display: flex;
@@ -602,6 +613,8 @@ html, body {
   background-color: #f1f3f4;
   padding-bottom: 80px; /* Space for bottom nav */
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Header */
@@ -612,6 +625,9 @@ html, body {
   padding: 1.25rem 1.5rem;
   background: white;
   border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 120;
 }
 
 .student-header-logo {
@@ -638,22 +654,6 @@ html, body {
 .student-header-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.student-notification-btn {
-  background: none;
-  border: none;
-  color: #1a1a1a;
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  transition: color 0.15s ease;
-  
-  &:hover {
-    color: #4ECDC4;
-  }
 }
 
 .student-profile-picture {
@@ -676,6 +676,11 @@ html, body {
 /* Date section */
 .student-date-section {
   padding: 1.5rem 1.5rem 1rem;
+  position: sticky;
+  top: 72px;
+  z-index: 90;
+  background: #f1f3f4;
+  margin-bottom: 0.75rem;
 }
 
 .student-date-title {
@@ -697,6 +702,15 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  margin-top: 1rem;
+  padding-bottom: 4rem;
+}
+
+.student-home-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 1.25rem;
 }
 
 /* Student Module card */
@@ -744,19 +758,42 @@ html, body {
 
 .student-module-icon-purple {
   background: #E8DEFF;
+  color: #6b21a8;
 }
 
 .student-module-icon-red {
   background: #FFE0E0;
+  color: #c02626;
 }
 
 .student-module-icon-yellow {
   background: #FFF4D6;
+  color: #b45309;
+}
+
+.student-module-icon-teal {
+  background: #D9F5F1;
+  color: #0f766e;
 }
 
 .student-module-info {
   flex: 1;
   min-width: 0;
+}
+
+.student-module-card.loading {
+  justify-content: center;
+  color: #7a7a7a;
+  font-weight: 500;
+}
+
+.student-module-empty {
+  padding: 1.25rem;
+  text-align: center;
+  color: #7a7a7a;
+  background: white;
+  border-radius: 1rem;
+  border: 1px dashed #d6d6d6;
 }
 
 .student-module-name {
@@ -1625,31 +1662,26 @@ html, body {
 /* Stats Filters */
 .stats-filters {
   display: flex;
-  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
   padding: 1.25rem 1.5rem 0.5rem;
 }
 
-.filter-select {
-  flex: 1;
-  padding: 0.625rem 1rem;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.625rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+.stats-filter-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stats-greeting {
+  font-size: 1rem;
+  font-weight: 600;
   color: #1a1a1a;
-  cursor: pointer;
-  transition: all 0.15s ease;
+}
 
-  &:focus {
-    outline: none;
-    border-color: #4ECDC4;
-    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
-  }
-
-  &:hover {
-    border-color: #d1d5db;
-  }
+.stats-email {
+  font-size: 0.8rem;
+  color: #6b7280;
 }
 
 /* Stats Cards */
@@ -1658,6 +1690,13 @@ html, body {
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   padding: 1rem 1.5rem;
+}
+
+.student-stats-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
 }
 
 .student-stat-card {
@@ -1699,6 +1738,11 @@ html, body {
   color: #3B82F6;
 }
 
+.student-stat-icon-purple {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
 .student-stat-value {
   font-size: 2rem;
   font-weight: 700;
@@ -1725,6 +1769,47 @@ html, body {
   padding: 1.25rem;
   margin: 0 1.5rem 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.student-weekly-meta {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.student-weekly-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.student-weekly-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.student-weekly-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.student-weekly-bar-day {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.student-weekly-bar-meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.student-weekly-note {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #dc2626;
+  font-weight: 500;
 }
 
 .student-chart-header {
@@ -1975,6 +2060,11 @@ html, body {
   transition: all 0.3s ease;
 }
 
+.bar-tooltip {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
 .bar-label {
   font-size: 0.8125rem;
   color: #666666;
@@ -2033,6 +2123,16 @@ html, body {
 .activity-icon-error {
   background: #FEE2E2;
   color: #EF4444;
+}
+
+.activity-icon-warning {
+  background: #FEF3C7;
+  color: #F59E0B;
+}
+
+.activity-icon-info {
+  background: #DBEAFE;
+  color: #3B82F6;
 }
 
 .activity-content {

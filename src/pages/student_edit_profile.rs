@@ -1,9 +1,74 @@
+use crate::user_context::get_current_user;
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
+use urlencoding::encode;
+
+fn format_role(role: &str) -> String {
+    match role {
+        "student" => "Student".to_string(),
+        "lecturer" => "Lecturer".to_string(),
+        "tutor" => "Tutor".to_string(),
+        other => {
+            let mut chars = other.chars();
+            match chars.next() {
+                Some(first) => format!("{}{}", first.to_uppercase(), chars.as_str()),
+                None => "Student".to_string(),
+            }
+        }
+    }
+}
 
 #[component]
 pub fn StudentEditProfilePage() -> impl IntoView {
     let navigate = use_navigate();
+    let current_user = get_current_user();
+
+    let student_id = RwSignal::new(String::new());
+    let email = RwSignal::new(String::new());
+    let first_name = RwSignal::new(String::new());
+    let last_name = RwSignal::new(String::new());
+    let role_label = RwSignal::new(String::from("Student"));
+    let avatar_src = RwSignal::new(String::new());
+    let password = RwSignal::new(String::new());
+
+    Effect::new({
+        let current_user = current_user.clone();
+        let student_id = student_id.clone();
+        let email = email.clone();
+        let first_name = first_name.clone();
+        let last_name = last_name.clone();
+        let role_label = role_label.clone();
+        let avatar_src = avatar_src.clone();
+        move |_| {
+            if let Some(user) = current_user.get() {
+                student_id.set(format!("STU-{0:06}", user.user_id));
+                email.set(user.email_address.clone());
+                first_name.set(user.name.clone());
+                last_name.set(user.surname.clone());
+                role_label.set(format_role(&user.role));
+                let full_name = format!("{} {}", user.name, user.surname);
+                let encoded = encode(&full_name);
+                avatar_src.set(format!(
+                    "https://ui-avatars.com/api/?name={}&background=14b8a6&color=ffffff&format=svg",
+                    encoded
+                ));
+                password.set(String::new());
+            }
+        }
+    });
+
+    let display_name = Signal::derive(move || {
+        let first = first_name.get();
+        let last = last_name.get();
+        let combined = format!("{} {}", first.trim(), last.trim())
+            .trim()
+            .to_string();
+        if combined.is_empty() {
+            "Student".to_string()
+        } else {
+            combined
+        }
+    });
 
     let navigate_back = navigate.clone();
     let go_back = move |_| {
@@ -35,15 +100,26 @@ pub fn StudentEditProfilePage() -> impl IntoView {
                 {/* Profile Avatar Section */}
                 <div class="student-edit-profile-avatar-section">
                     <div class="student-edit-profile-avatar-container">
-                        <img src="https://mockmind-api.uifaces.co/content/human/125.jpg" alt="Profile Avatar" class="student-edit-profile-avatar-img" />
+                        <img
+                            prop:src=move || {
+                                let src = avatar_src.get();
+                                if src.is_empty() {
+                                    "/logo.png".to_string()
+                                } else {
+                                    src
+                                }
+                            }
+                            alt=move || display_name.get()
+                            class="student-edit-profile-avatar-img"
+                        />
                         <button class="student-avatar-edit-btn">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
                                 <path d="M12 4c4.41 0 8 3.59 8 8s-3.59 8-8 8-8-3.59-8-8 3.59-8 8-8m0-2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 4h-2v4H7v2h4v4h2v-4h4v-2h-4V6z" fill="currentColor"/>
                             </svg>
                         </button>
                     </div>
-                    <h2 class="student-edit-profile-name">"Sarah Johnson"</h2>
-                    <p class="student-edit-profile-subtitle">"Computer Science Student"</p>
+                    <h2 class="student-edit-profile-name">{move || display_name.get()}</h2>
+                    <p class="student-edit-profile-subtitle">{move || role_label.get()}</p>
                 </div>
 
                 {/* Personal Information Form */}
@@ -67,7 +143,7 @@ pub fn StudentEditProfilePage() -> impl IntoView {
                         <input
                             type="text"
                             class="student-edit-input"
-                            value="STU-2024-001234"
+                            prop:value=move || student_id.get()
                             placeholder="Student ID"
                             readonly
                         />
@@ -84,7 +160,7 @@ pub fn StudentEditProfilePage() -> impl IntoView {
                         <input
                             type="email"
                             class="student-edit-input"
-                            value="sarah.johnson@university.edu"
+                            bind:value=email
                             placeholder="Email Address"
                         />
                     </div>
@@ -100,7 +176,7 @@ pub fn StudentEditProfilePage() -> impl IntoView {
                         <input
                             type="password"
                             class="student-edit-input"
-                            value="**************"
+                            bind:value=password
                             placeholder="Password"
                         />
                         <button class="student-edit-input-action">
@@ -122,8 +198,9 @@ pub fn StudentEditProfilePage() -> impl IntoView {
                         <input
                             type="text"
                             class="student-edit-input"
-                            value="Tech University"
-                            placeholder="University"
+                            prop:value=move || role_label.get()
+                            placeholder="Account Type"
+                            readonly
                         />
                     </div>
 
@@ -138,7 +215,7 @@ pub fn StudentEditProfilePage() -> impl IntoView {
                         <input
                             type="text"
                             class="student-edit-input"
-                            value="Sarah"
+                            bind:value=first_name
                             placeholder="First Name"
                         />
                     </div>
@@ -154,7 +231,7 @@ pub fn StudentEditProfilePage() -> impl IntoView {
                         <input
                             type="text"
                             class="student-edit-input"
-                            value="Johnson"
+                            bind:value=last_name
                             placeholder="Last Name"
                         />
                     </div>

@@ -1,6 +1,22 @@
 use crate::user_context::{clear_current_user, get_current_user};
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
+use urlencoding::encode;
+
+fn format_role(role: &str) -> String {
+    match role {
+        "student" => "Student".to_string(),
+        "lecturer" => "Lecturer".to_string(),
+        "tutor" => "Tutor".to_string(),
+        other => {
+            let mut chars = other.chars();
+            match chars.next() {
+                Some(first) => format!("{}{}", first.to_uppercase(), chars.as_str()),
+                None => "Student".to_string(),
+            }
+        }
+    }
+}
 
 #[component]
 pub fn StudentProfilePage() -> impl IntoView {
@@ -37,7 +53,7 @@ pub fn StudentProfilePage() -> impl IntoView {
         current_user
             .get()
             .map(|u| u.email_address.clone())
-            .unwrap_or_else(|| "student@university.edu".to_string())
+            .unwrap_or_else(|| "student@example.com".to_string())
     };
 
     let user_id = move || {
@@ -45,6 +61,24 @@ pub fn StudentProfilePage() -> impl IntoView {
             .get()
             .map(|u| format!("STU-{:06}", u.user_id))
             .unwrap_or_else(|| "STU-000000".to_string())
+    };
+
+    let user_role = move || {
+        current_user
+            .get()
+            .map(|u| format_role(&u.role))
+            .unwrap_or_else(|| "Student".to_string())
+    };
+
+    let avatar_url = move || {
+        current_user.get().map(|u| {
+            let full_name = format!("{} {}", u.name, u.surname);
+            let encoded = encode(&full_name);
+            format!(
+                "https://ui-avatars.com/api/?name={}&background=14b8a6&color=ffffff&format=svg",
+                encoded
+            )
+        })
     };
 
     view! {
@@ -77,7 +111,11 @@ pub fn StudentProfilePage() -> impl IntoView {
                 {/* Profile Avatar Section */}
                 <div class="student-profile-avatar-section">
                     <div class="student-profile-avatar-container">
-                        <img src="https://mockmind-api.uifaces.co/content/human/125.jpg" alt="Profile Avatar" class="student-profile-avatar-img" />
+                        <img
+                            prop:src=move || avatar_url().unwrap_or_else(|| "/logo.png".to_string())
+                            alt=user_name
+                            class="student-profile-avatar-img"
+                        />
                         <button class="student-avatar-edit-btn">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="2">
                                 <path d="M12 5v14m-7-7h14"></path>
@@ -85,7 +123,7 @@ pub fn StudentProfilePage() -> impl IntoView {
                         </button>
                     </div>
                     <h2 class="student-profile-name">{user_name}</h2>
-                    <p class="student-profile-subtitle">"Computer Science Student"</p>
+                    <p class="student-profile-subtitle">{user_role}</p>
                 </div>
 
                 {/* Personal Information */}
@@ -145,8 +183,8 @@ pub fn StudentProfilePage() -> impl IntoView {
                             </svg>
                         </div>
                         <div class="student-info-text">
-                            <div class="student-info-label">"University"</div>
-                            <div class="student-info-value">"Tech University"</div>
+                            <div class="student-info-label">"Account Type"</div>
+                            <div class="student-info-value">{user_role}</div>
                         </div>
                     </div>
                 </section>

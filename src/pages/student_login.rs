@@ -1,3 +1,5 @@
+use crate::routes::auth_functions::LoginUser;
+use crate::user_context::set_current_user;
 use leptos::ev::SubmitEvent;
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
@@ -10,23 +12,54 @@ pub fn StudentLoginPage() -> impl IntoView {
     let (student_id, set_student_id) = signal(String::new());
     let (password, set_password) = signal(String::new());
     let (show_password, set_show_password) = signal(false);
+    let feedback = RwSignal::new(None::<(bool, String)>);
+
+    let login_action = ServerAction::<LoginUser>::new();
+
+    Effect::new({
+        let feedback = feedback.clone();
+        move |_| {
+            if login_action.pending().get() {
+                feedback.set(None);
+            }
+        }
+    });
+
+    Effect::new({
+        let navigate = navigate.clone();
+        let feedback = feedback.clone();
+        move |_| {
+            if let Some(result) = login_action.value().get() {
+                match result {
+                    Ok(response) => {
+                        if response.success {
+                            if let Some(user) = response.user {
+                                set_current_user(user.clone());
+                                navigate("/student/home", Default::default());
+                            }
+                        } else {
+                            feedback.set(Some((false, response.message.clone())));
+                        }
+                    }
+                    Err(err) => {
+                        feedback.set(Some((false, err.to_string())));
+                    }
+                }
+            }
+        }
+    });
 
     // Handle form submission
     let handle_submit = move |ev: SubmitEvent| {
         ev.prevent_default();
 
         let student_id_value = student_id.get();
-        let _password_value = password.get();
+        let password_value = password.get();
 
-        leptos::logging::log!(
-            "Login attempt - Student ID: {}, Password: [hidden]",
-            student_id_value
-        );
-
-        // Here you would typically make an API call to authenticate
-        // For now, just navigate to home page
-        let navigate = navigate.clone();
-        navigate("/student/home", Default::default());
+        login_action.dispatch(LoginUser {
+            email: student_id_value,
+            password: password_value,
+        });
     };
 
     // Toggle password visibility
@@ -59,7 +92,7 @@ pub fn StudentLoginPage() -> impl IntoView {
                                 type="text"
                                 id="student-id"
                                 class="student-form-input"
-                                placeholder="Enter your student ID"
+                                placeholder="Enter your student ID or email"
                                 prop:value=student_id
                                 on:input=move |ev| {
                                     set_student_id.set(event_target_value(&ev));
@@ -111,10 +144,27 @@ pub fn StudentLoginPage() -> impl IntoView {
                         </div>
                     </div>
 
-                    <button type="submit" class="student-login-button">
-                        "Sign In"
+                    <button
+                        type="submit"
+                        class="student-login-button"
+                        disabled=move || login_action.pending().get()
+                    >
+                        {move || if login_action.pending().get() {
+                            "Signing in…"
+                        } else {
+                            "Sign In"
+                        }}
                     </button>
                 </form>
+
+                {move || {
+                    feedback
+                        .get()
+                        .map(|(_, message)| {
+                            view! { <p class="student-login-feedback">{message}</p> }.into_any()
+                        })
+                        .unwrap_or_else(|| view! { <></> }.into_any())
+                }}
 
                 <div class="student-login-footer">
                     <a href="#" class="student-forgot-link">"Forgot password?"</a>

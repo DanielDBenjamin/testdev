@@ -1,4 +1,6 @@
 #[cfg(feature = "ssr")]
+use crate::database::models::User;
+#[cfg(feature = "ssr")]
 use crate::database::{
     authenticate_user, create_user, init_db_pool, update_user_password_by_email, CreateUserRequest,
 };
@@ -109,10 +111,50 @@ pub async fn login_user(email: String, password: String) -> Result<AuthResponse,
         .await
         .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
-    // Authenticate user
-    let email_normalized = email.trim().to_lowercase();
+    let identifier = email.trim();
+    let candidate_email = if identifier.contains('@') {
+        identifier.to_lowercase()
+    } else {
+        let digits: String = identifier.chars().filter(|c| c.is_ascii_digit()).collect();
+        if digits.is_empty() {
+            return Ok(AuthResponse {
+                success: false,
+                message: "Please enter a valid email address or student ID".to_string(),
+                user: None,
+            });
+        }
 
-    match authenticate_user(&pool, &email_normalized, &password).await {
+        let student_id = match digits.parse::<i64>() {
+            Ok(id) => id,
+            Err(_) => {
+                return Ok(AuthResponse {
+                    success: false,
+                    message: "Invalid student ID format".to_string(),
+                    user: None,
+                });
+            }
+        };
+
+        let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE userID = ?")
+            .bind(student_id)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| ServerFnError::new(format!("Database error: {}", e)))?;
+
+        match user {
+            Some(u) => u.email_address.to_lowercase(),
+            None => {
+                return Ok(AuthResponse {
+                    success: false,
+                    message: "No account found with that student ID".to_string(),
+                    user: None,
+                });
+            }
+        }
+    };
+
+    // Authenticate user
+    match authenticate_user(&pool, &candidate_email, &password).await {
         Ok(user) => Ok(AuthResponse {
             success: true,
             message: "Login successful!".to_string(),
