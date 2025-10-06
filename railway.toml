@@ -1,0 +1,6 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "./build.sh"
+
+[deploy]
+startCommand = "./start.sh"
