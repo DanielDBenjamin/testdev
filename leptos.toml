@@ -1,0 +1,3 @@
+[wasm-opt]
+# Enable bulk memory operations
+args = ["--enable-bulk-memory", "-Oz"]
