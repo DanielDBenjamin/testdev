@@ -9,12 +9,22 @@ RUN rustup target add wasm32-unknown-unknown
 # Install cargo-leptos directly without complex caching
 RUN cargo install cargo-leptos --version 0.2.9
 
-# Set working directory and copy everything
+# Set working directory
 WORKDIR /app
+
+# Copy everything including .cargo directory
 COPY . .
 
-# Build the application with cargo-leptos (should work on nightly)
+# Build the application with cargo-leptos
 RUN cargo leptos build --release
+
+# Verify build artifacts exist
+RUN echo "=== Verifying build artifacts ===" && \
+    ls -la target/site/ && \
+    ls -la target/site/pkg/ && \
+    test -f target/site/pkg/clock-it.css || echo "ERROR: CSS missing!" && \
+    test -f target/site/pkg/clock-it.js || echo "ERROR: JS missing!" && \
+    test -f target/site/pkg/clock-it_bg.wasm || echo "ERROR: WASM missing!"
 
 # Use a smaller base image for the final stage
 FROM debian:bookworm-slim
@@ -31,24 +41,9 @@ WORKDIR /app
 # Copy the built application from the builder stage
 COPY --from=builder /app/target/release/clock-it /app/clock-it
 COPY --from=builder /app/target/site /app/target/site
-COPY --from=builder /app/public /app/public
-COPY --from=builder /app/style /app/style
+
+# Verify files were copied
+RUN ls -la /app/target/site/pkg/ || echo "WARNING: pkg directory not found!"
 
 # Create directory for SQLite database
 RUN mkdir -p /app/data
-
-# Expose the port the app runs on
-EXPOSE 3000
-
-# Set environment variables
-ENV LEPTOS_SITE_ROOT="/app/target/site"
-ENV LEPTOS_SITE_PKG_DIR="pkg" 
-ENV DATABASE_URL="sqlite:///app/data/clock_it.db"
-ENV CLOCK_IT_USE_TLS="false"
-
-# Make the binary executable
-RUN chmod +x /app/clock-it
-
-# Ensure proper working directory and run the application
-WORKDIR /app
-CMD ["./clock-it"]

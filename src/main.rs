@@ -169,6 +169,7 @@ async fn main() {
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use tokio::net::TcpListener;
+    use tower_http::services::ServeDir;  // ADD THIS IMPORT
 
     println!("🚀 Starting Clock-It server...");
 
@@ -207,11 +208,30 @@ async fn main() {
     // Generate routes
     let routes = generate_route_list(App);
 
+    // ADD THIS SECTION - Configure static file serving
+    let pkg_path = format!("{}/pkg", leptos_options.site_root);
+    log!("📁 Serving static files from: {}", pkg_path);
+    
+    // Debug: verify files exist
+    if std::path::Path::new(&pkg_path).exists() {
+        log!("✅ pkg directory found");
+        if let Ok(entries) = std::fs::read_dir(&pkg_path) {
+            log!("📄 Files in pkg/:");
+            for entry in entries.flatten() {
+                log!("   - {}", entry.file_name().to_string_lossy());
+            }
+        }
+    } else {
+        log!("⚠️  WARNING: pkg directory not found at {}", pkg_path);
+    }
+
     let app = Router::new()
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();
             move || shell(leptos_options.clone())
         })
+        // ADD THIS LINE - Serve the pkg directory
+        .nest_service("/pkg", ServeDir::new(pkg_path))
         .fallback(leptos_axum::file_and_error_handler(shell))
         .with_state(leptos_options);
 
