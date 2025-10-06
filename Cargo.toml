@@ -9,22 +9,29 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 leptos = { version = "0.8.0" }
 leptos_router = { version = "0.8.0" }
-axum = { version = "0.8.0", optional = true }
-console_error_panic_hook = { version = "0.1", optional = true }
-leptos_axum = { version = "0.8.0", optional = true }
 leptos_meta = { version = "0.8.0" }
-tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
+console_error_panic_hook = { version = "0.1", optional = true }
 wasm-bindgen = { version = "=0.2.103", optional = true }
 
 # Always available dependencies
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde", "wasm-bindgen"] }
+gloo-net = "0.6.0"
+qrcode = "0.12"
+urlencoding = "2.1"
+futures = "0.3"
 
-# Web/WASM dependencies - add these features to web-sys
+# Web/WASM dependencies
 web-sys = { version = "0.3", features = [
     "Window", 
     "Storage",
     "Navigator",
+    "Geolocation",
+    "Position",
+    "Coordinates",
+    "PositionError",
+    "PositionOptions",
     "MediaDevices",
     "MediaStream",
     "MediaStreamConstraints",
@@ -34,22 +41,26 @@ web-sys = { version = "0.3", features = [
     "CanvasRenderingContext2d",
     "ImageData",
 ] }
-
-# Add these new dependencies
 gloo = { version = "0.11", features = ["timers"] }
 gloo-timers = { version = "0.3", features = ["futures"] }
 wasm-bindgen-futures = { version = "0.4", optional = true }
 js-sys = { version = "0.3", optional = true }
 rqrr = { version = "0.7", optional = true }
 
-chrono = { version = "0.4", features = ["serde", "wasm-bindgen"] }
-
-# Database dependencies - only available when ssr feature is enabled
+# Server-only dependencies
+axum = { version = "0.8.0", optional = true }
+leptos_axum = { version = "0.8.0", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid", "macros"], optional = true }
 uuid = { version = "1.0", features = ["v4", "serde"], optional = true }
-
-# Session management dependencies
 axum_session = { version = "0.16", optional = true }
+axum-server = { version = "0.6", features = ["tls-rustls"], optional = true }
+
+
+# TLS dependencies - ONLY for SSR
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+tokio-rustls = "0.24"
+rustls-pemfile = "1.0"
 
 [features]
 hydrate = [
@@ -66,6 +77,7 @@ ssr = [
     "dep:leptos_axum",
     "dep:sqlx",
     "dep:uuid",
+    "dep:axum-server",
     "leptos/ssr",
     "leptos_meta/ssr",
     "leptos_router/ssr",
@@ -85,7 +97,7 @@ site-root = "target/site"
 site-pkg-dir = "pkg"
 style-file = "style/main.scss"
 assets-dir = "public"
-site-addr = "127.0.0.1:3000"
+site-addr = "0.0.0.0:3000"  # Changed to listen on all interfaces
 reload-port = 3001
 end2end-cmd = "npx playwright test"
 end2end-dir = "end2end"

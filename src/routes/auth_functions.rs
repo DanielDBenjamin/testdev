@@ -1,6 +1,10 @@
 #[cfg(feature = "ssr")]
-use crate::database::{init_db_pool, create_user, authenticate_user, CreateUserRequest};
-use crate::types::{RegisterData, LoginData, AuthResponse};
+use crate::database::models::User;
+#[cfg(feature = "ssr")]
+use crate::database::{
+    authenticate_user, create_user, init_db_pool, update_user_password_by_email, CreateUserRequest,
+};
+use crate::types::{AuthResponse, BasicResponse, RegisterData};
 use leptos::prelude::*;
 
 #[server(RegisterUser, "/api")]
@@ -55,9 +59,9 @@ pub async fn register_user(data: RegisterData) -> Result<AuthResponse, ServerFnE
     }
 
     // Initialize database connection
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
 
     // Create user request
     let create_request = CreateUserRequest {
@@ -84,9 +88,9 @@ pub async fn register_user(data: RegisterData) -> Result<AuthResponse, ServerFnE
 }
 
 #[server(LoginUser, "/api")]
-pub async fn login_user(data: LoginData) -> Result<AuthResponse, ServerFnError> {
+pub async fn login_user(email: String, password: String) -> Result<AuthResponse, ServerFnError> {
     // Validate input
-    if data.email.trim().is_empty() {
+    if email.trim().is_empty() {
         return Ok(AuthResponse {
             success: false,
             message: "Email is required".to_string(),
@@ -94,7 +98,7 @@ pub async fn login_user(data: LoginData) -> Result<AuthResponse, ServerFnError> 
         });
     }
 
-    if data.password.trim().is_empty() {
+    if password.trim().is_empty() {
         return Ok(AuthResponse {
             success: false,
             message: "Password is required".to_string(),
@@ -103,12 +107,54 @@ pub async fn login_user(data: LoginData) -> Result<AuthResponse, ServerFnError> 
     }
 
     // Initialize database connection
-    let pool = init_db_pool().await.map_err(|e| {
-        ServerFnError::new(format!("Database connection failed: {}", e))
-    })?;
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
+
+    let identifier = email.trim();
+    let candidate_email = if identifier.contains('@') {
+        identifier.to_lowercase()
+    } else {
+        let digits: String = identifier.chars().filter(|c| c.is_ascii_digit()).collect();
+        if digits.is_empty() {
+            return Ok(AuthResponse {
+                success: false,
+                message: "Please enter a valid email address or student ID".to_string(),
+                user: None,
+            });
+        }
+
+        let student_id = match digits.parse::<i64>() {
+            Ok(id) => id,
+            Err(_) => {
+                return Ok(AuthResponse {
+                    success: false,
+                    message: "Invalid student ID format".to_string(),
+                    user: None,
+                });
+            }
+        };
+
+        let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE userID = ?")
+            .bind(student_id)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| ServerFnError::new(format!("Database error: {}", e)))?;
+
+        match user {
+            Some(u) => u.email_address.to_lowercase(),
+            None => {
+                return Ok(AuthResponse {
+                    success: false,
+                    message: "No account found with that student ID".to_string(),
+                    user: None,
+                });
+            }
+        }
+    };
 
     // Authenticate user
-    match authenticate_user(&pool, &data.email.trim().to_lowercase(), &data.password).await {
+    match authenticate_user(&pool, &candidate_email, &password).await {
         Ok(user) => Ok(AuthResponse {
             success: true,
             message: "Login successful!".to_string(),
@@ -118,6 +164,50 @@ pub async fn login_user(data: LoginData) -> Result<AuthResponse, ServerFnError> 
             success: false,
             message: e,
             user: None,
+        }),
+    }
+}
+
+#[server(ResetPassword, "/api")]
+pub async fn reset_password_fn(
+    email: String,
+    new_password: String,
+    confirm_password: String,
+) -> Result<BasicResponse, ServerFnError> {
+    if email.trim().is_empty() {
+        return Ok(BasicResponse {
+            success: false,
+            message: "Email is required".to_string(),
+        });
+    }
+
+    if new_password.len() < 6 {
+        return Ok(BasicResponse {
+            success: false,
+            message: "Password must be at least 6 characters".to_string(),
+        });
+    }
+
+    if new_password != confirm_password {
+        return Ok(BasicResponse {
+            success: false,
+            message: "Passwords do not match".to_string(),
+        });
+    }
+
+    let pool = init_db_pool()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Database connection failed: {}", e)))?;
+
+    match update_user_password_by_email(&pool, &email.trim().to_lowercase(), &new_password).await {
+        Ok(_) => Ok(BasicResponse {
+            success: true,
+            message: "Password updated successfully. You can now sign in with your new password."
+                .to_string(),
+        }),
+        Err(e) => Ok(BasicResponse {
+            success: false,
+            message: e,
         }),
     }
 }

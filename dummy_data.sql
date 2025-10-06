@@ -1,139 +1,191 @@
--- All users have password: password123
--- Hash generated using the simple_hash function in auth.rs
+PRAGMA foreign_keys = ON;
 
--- Insert dummy users (lecturers, tutors, and students)
+-- Reset tables in dependency order
+DELETE FROM attendance;
+DELETE FROM module_tutor;
+DELETE FROM lecturer_module;
+DELETE FROM classes;
+DELETE FROM module_students;
+DELETE FROM modules;
+DELETE FROM users;
+
+-- Users
+-- All users have password: password123 (simple_hash_17039136619706008904)
 INSERT INTO users (name, surname, emailAddress, password, role, created_at, updated_at) VALUES
-('John', 'Smith', 'john.smith@university.ac.za', 'simple_hash_17039136619706008904', 'lecturer', datetime('now'), datetime('now')),
-('Sarah', 'Jones', 'sarah.jones@university.ac.za', 'simple_hash_17039136619706008904', 'lecturer', datetime('now'), datetime('now')),
-('Mike', 'Williams', 'mike.williams@university.ac.za', 'simple_hash_17039136619706008904', 'tutor', datetime('now'), datetime('now')),
-('Lisa', 'Anderson', 'lisa.anderson@university.ac.za', 'simple_hash_17039136619706008904', 'tutor', datetime('now'), datetime('now')),
+('John',   'Smith',   'john.smith@university.ac.za',  'simple_hash_17039136619706008904', 'lecturer', datetime('now'), datetime('now')),
+('Sarah',  'Jones',   'sarah.jones@university.ac.za', 'simple_hash_17039136619706008904', 'lecturer', datetime('now'), datetime('now')),
+('Mike',   'Williams','mike.williams@university.ac.za','simple_hash_17039136619706008904','tutor',    datetime('now'), datetime('now')),
+('Lisa',   'Anderson','lisa.anderson@university.ac.za','simple_hash_17039136619706008904','tutor',    datetime('now'), datetime('now')),
 
-('Emma', 'Brown', 'emma.brown@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
-('Oliver', 'Davis', 'oliver.davis@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
-('Ava', 'Miller', 'ava.miller@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
-('Liam', 'Wilson', 'liam.wilson@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
-('Sophia', 'Moore', 'sophia.moore@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
-('Noah', 'Taylor', 'noah.taylor@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
-('Isabella', 'Thomas', 'isabella.thomas@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
-('James', 'Jackson', 'james.jackson@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
-('Mia', 'White', 'mia.white@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
-('Lucas', 'Harris', 'lucas.harris@student.ac.za', 'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now'));
+('Emma',   'Brown',   'emma.brown@student.ac.za',     'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Oliver', 'Davis',   'oliver.davis@student.ac.za',   'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Ava',    'Miller',  'ava.miller@student.ac.za',     'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Liam',   'Wilson',  'liam.wilson@student.ac.za',    'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Sophia', 'Moore',   'sophia.moore@student.ac.za',   'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Noah',   'Taylor',  'noah.taylor@student.ac.za',    'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Isabella','Thomas', 'isabella.thomas@student.ac.za','simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('James',  'Jackson', 'james.jackson@student.ac.za',  'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Mia',    'White',   'mia.white@student.ac.za',      'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Lucas',  'Harris',  'lucas.harris@student.ac.za',   'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now')),
+('Test',   'Student', 'test.student@student.ac.za',   'simple_hash_17039136619706008904', 'student', datetime('now'), datetime('now'));
 
--- Insert modules
+-- Modules
 INSERT INTO modules (moduleCode, moduleTitle, description, created_at, updated_at) VALUES
-('CS301', 'Data Structures', 'Advanced data structures and algorithms including trees, graphs, and dynamic programming', datetime('now'), datetime('now')),
-('CS302', 'Web Development', 'Modern web development using React, Node.js, and database integration', datetime('now'), datetime('now')),
-('CS303', 'Machine Learning', 'Introduction to machine learning algorithms, neural networks, and practical applications', datetime('now'), datetime('now')),
-('IS201', 'Database Systems', 'Relational database design, SQL, normalization, and transaction management', datetime('now'), datetime('now')),
-('CS304', 'Operating Systems', 'Process management, memory allocation, file systems, and concurrency', datetime('now'), datetime('now'));
+('CS301', 'Data Structures', 'Trees, graphs, dynamic programming', datetime('now'), datetime('now')),
+('CS302', 'Web Development', 'Frontend + Backend development',      datetime('now'), datetime('now'));
 
--- Link lecturers to modules
+-- Lecturer assignments
 INSERT INTO lecturer_module (moduleCode, lecturerEmailAddress, created_at) VALUES
-('CS301', 'john.smith@university.ac.za', datetime('now')),
-('CS302', 'john.smith@university.ac.za', datetime('now')),
-('CS303', 'sarah.jones@university.ac.za', datetime('now')),
-('IS201', 'sarah.jones@university.ac.za', datetime('now')),
-('CS304', 'john.smith@university.ac.za', datetime('now'));
+('CS301', 'john.smith@university.ac.za',  datetime('now')),
+('CS302', 'john.smith@university.ac.za',  datetime('now'));
 
--- Link tutors to modules
+-- Tutor mappings (optional)
 INSERT INTO module_tutor (moduleCode, tutorEmailAddress, created_at) VALUES
 ('CS301', 'mike.williams@university.ac.za', datetime('now')),
-('CS302', 'mike.williams@university.ac.za', datetime('now')),
-('CS303', 'lisa.anderson@university.ac.za', datetime('now'));
+('CS302', 'lisa.anderson@university.ac.za', datetime('now'));
 
--- Insert classes (past and upcoming)
+-- Enrolments (only enrolled students are considered in right-panel list and attendance below)
+INSERT INTO module_students (moduleCode, studentEmailAddress, created_at) VALUES
+('CS301', 'emma.brown@student.ac.za',   datetime('now')),
+('CS301', 'oliver.davis@student.ac.za', datetime('now')),
+('CS301', 'ava.miller@student.ac.za',   datetime('now')),
+('CS301', 'liam.wilson@student.ac.za',  datetime('now')),
+('CS302', 'sophia.moore@student.ac.za', datetime('now')),
+('CS302', 'noah.taylor@student.ac.za',  datetime('now')),
+('CS302', 'isabella.thomas@student.ac.za', datetime('now')),
+('CS302', 'james.jackson@student.ac.za',   datetime('now')),
+('CS302', 'test.student@student.ac.za',    datetime('now'));
+
+-- Classes: 3 months × 4 weeks for each module
 INSERT INTO classes (moduleCode, title, venue, description, recurring, date, time, status, created_at, updated_at) VALUES
--- Past classes (completed)
-('CS301', 'Data Structures Lecture', 'Lecture Hall A', 'Introduction to trees and graphs', 'weekly', date('now', '-14 days'), '08:00', 'completed', datetime('now', '-14 days'), datetime('now')),
-('CS301', 'Data Structures Practical', 'Lab 3', 'Implementing binary search trees', 'weekly', date('now', '-12 days'), '14:00', 'completed', datetime('now', '-12 days'), datetime('now')),
-('CS302', 'Web Dev Lecture', 'Lecture Hall B', 'React hooks and state management', 'weekly', date('now', '-13 days'), '10:00', 'completed', datetime('now', '-13 days'), datetime('now')),
-('CS303', 'ML Lecture', 'Lecture Hall C', 'Neural network basics', 'weekly', date('now', '-11 days'), '08:00', 'completed', datetime('now', '-11 days'), datetime('now')),
+-- CS301 current and previous two months (approx W1..W4)
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','+6 days'),  '10:00','completed', datetime('now'), datetime('now')),
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','+13 days'), '10:00','completed', datetime('now'), datetime('now')),
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','+20 days'), '10:00','completed', datetime('now'), datetime('now')),
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','+27 days'), '10:00','completed', datetime('now'), datetime('now')),
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','-1 months','+6 days'),  '10:00','completed', datetime('now'), datetime('now')),
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','-1 months','+13 days'), '10:00','completed', datetime('now'), datetime('now')),
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','-1 months','+20 days'), '10:00','completed', datetime('now'), datetime('now')),
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','-1 months','+27 days'), '10:00','completed', datetime('now'), datetime('now')),
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','-2 months','+6 days'),  '10:00','completed', datetime('now'), datetime('now')),
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','-2 months','+13 days'), '10:00','completed', datetime('now'), datetime('now')),
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','-2 months','+20 days'), '10:00','completed', datetime('now'), datetime('now')),
+('CS301','DS Lecture','Hall A','Lecture','weekly', date('now','start of month','-2 months','+27 days'), '10:00','completed', datetime('now'), datetime('now')),
+-- CS302 current and previous two months (approx W1..W4)
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','+5 days'),  '14:00','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','+12 days'), '14:00','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','+19 days'), '14:00','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','+26 days'), '14:00','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','-1 months','+5 days'),  '14:00','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','-1 months','+12 days'), '14:00','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','-1 months','+19 days'), '14:00','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','-1 months','+26 days'), '14:00','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','-2 months','+5 days'),  '14:00','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','-2 months','+12 days'), '14:00','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','-2 months','+19 days'), '14:00','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Lecture','Hall B','Lecture','weekly', date('now','start of month','-2 months','+26 days'), '14:00','completed', datetime('now'), datetime('now'));
 
-('CS301', 'Data Structures Lecture', 'Lecture Hall A', 'Advanced graph algorithms', 'weekly', date('now', '-7 days'), '08:00', 'completed', datetime('now', '-7 days'), datetime('now')),
-('CS302', 'Web Dev Lab', 'Lab 1', 'Building REST APIs', 'weekly', date('now', '-6 days'), '14:00', 'completed', datetime('now', '-6 days'), datetime('now')),
-('CS304', 'OS Lecture', 'Lecture Hall B', 'Process scheduling', 'weekly', date('now', '-7 days'), '14:00', 'completed', datetime('now', '-7 days'), datetime('now')),
+-- Attendance (only for enrolled students)
+-- CS301
+INSERT INTO attendance (studentID, classID, status, recorded_at, notes)
+SELECT u.userID, c.classID,
+       CASE ((u.userID + c.classID) % 5)
+            WHEN 0 THEN 'late'
+            WHEN 1 THEN 'absent'
+            ELSE 'present'
+       END,
+       datetime(c.date || ' ' || c.time),
+       NULL
+FROM users u
+JOIN module_students ms ON ms.studentEmailAddress = u.emailAddress AND ms.moduleCode = 'CS301'
+JOIN classes c ON c.moduleCode = 'CS301';
 
-('CS301', 'Data Structures Lecture', 'Lecture Hall A', 'Dynamic programming', 'weekly', date('now', '-2 days'), '08:00', 'completed', datetime('now', '-2 days'), datetime('now')),
-('IS201', 'Database Lecture', 'Lecture Hall D', 'SQL joins and subqueries', 'weekly', date('now', '-3 days'), '12:00', 'completed', datetime('now', '-3 days'), datetime('now')),
+-- CS302
+INSERT INTO attendance (studentID, classID, status, recorded_at, notes)
+SELECT u.userID, c.classID,
+       CASE ((u.userID + c.classID) % 4)
+            WHEN 0 THEN 'late'
+            WHEN 1 THEN 'absent'
+            ELSE 'present'
+       END,
+       datetime(c.date || ' ' || c.time),
+       NULL
+FROM users u
+JOIN module_students ms ON ms.studentEmailAddress = u.emailAddress AND ms.moduleCode = 'CS302'
+JOIN classes c ON c.moduleCode = 'CS302';
 
--- Upcoming classes
-('CS301', 'Data Structures Practical', 'Lab 3', 'Graph traversal algorithms', 'weekly', date('now', '+1 days'), '14:00', 'upcoming', datetime('now'), datetime('now')),
-('CS302', 'Web Dev Lecture', 'Lecture Hall B', 'Frontend optimization', 'weekly', date('now', '+2 days'), '10:00', 'upcoming', datetime('now'), datetime('now')),
-('CS303', 'ML Practical', 'Lab 2', 'Training your first neural network', 'weekly', date('now', '+3 days'), '10:00', 'upcoming', datetime('now'), datetime('now')),
-('CS304', 'OS Lecture', 'Lecture Hall C', 'Memory management', 'weekly', date('now', '+4 days'), '10:00', 'upcoming', datetime('now'), datetime('now')),
-('IS201', 'Database Lab', 'Lab 4', 'Database design project', 'weekly', date('now', '+5 days'), '14:00', 'upcoming', datetime('now'), datetime('now'));
+-- ==========================
+-- Variance data to change weekly/monthly averages
+-- CS301: add a very low-attendance class in current month (W2)
+INSERT INTO classes (moduleCode, title, venue, description, recurring, date, time, status, created_at, updated_at) VALUES
+('CS301','DS Extra Low Attendance','Hall A','Test low attendance','single', date('now','start of month','+9 days'), '09:00','completed', datetime('now'), datetime('now'));
 
--- Insert attendance records for completed classes
--- Class 1 (CS301 - 14 days ago) - classID will be 1
-INSERT INTO attendance (studentID, classID, status, recorded_at, notes) VALUES
-(5, 1, 'present', datetime('now', '-14 days', '+8 hours'), NULL),
-(6, 1, 'present', datetime('now', '-14 days', '+8 hours'), NULL),
-(7, 1, 'late', datetime('now', '-14 days', '+8 hours', '+15 minutes'), 'Arrived 15 min late'),
-(8, 1, 'absent', NULL, NULL),
-(9, 1, 'present', datetime('now', '-14 days', '+8 hours'), NULL),
-(10, 1, 'present', datetime('now', '-14 days', '+8 hours'), NULL),
-(11, 1, 'present', datetime('now', '-14 days', '+8 hours'), NULL);
+INSERT INTO attendance (studentID, classID, status, recorded_at, notes)
+SELECT u.userID, c.classID,
+       CASE WHEN (u.userID % 2)=0 THEN 'absent' ELSE 'late' END,
+       datetime(c.date || ' ' || c.time),
+       NULL
+FROM users u
+JOIN module_students ms ON ms.studentEmailAddress = u.emailAddress AND ms.moduleCode = 'CS301'
+JOIN classes c ON c.moduleCode='CS301' AND c.date = date('now','start of month','+9 days') AND c.time='09:00';
 
--- Class 2 (CS301 Practical - 12 days ago) - classID will be 2
-INSERT INTO attendance (studentID, classID, status, recorded_at, notes) VALUES
-(5, 2, 'present', datetime('now', '-12 days', '+14 hours'), NULL),
-(6, 2, 'absent', NULL, 'Sick'),
-(7, 2, 'present', datetime('now', '-12 days', '+14 hours'), NULL),
-(8, 2, 'present', datetime('now', '-12 days', '+14 hours'), NULL),
-(9, 2, 'late', datetime('now', '-12 days', '+14 hours', '+10 minutes'), NULL),
-(10, 2, 'present', datetime('now', '-12 days', '+14 hours'), NULL);
+-- CS301: add a very high-attendance class last month (W4)
+INSERT INTO classes (moduleCode, title, venue, description, recurring, date, time, status, created_at, updated_at) VALUES
+('CS301','DS Extra High Attendance','Hall A','Test high attendance','single', date('now','start of month','-1 months','+25 days'), '09:00','completed', datetime('now'), datetime('now'));
 
--- Class 3 (CS302 - 13 days ago) - classID will be 3
-INSERT INTO attendance (studentID, classID, status, recorded_at, notes) VALUES
-(5, 3, 'present', datetime('now', '-13 days', '+10 hours'), NULL),
-(6, 3, 'present', datetime('now', '-13 days', '+10 hours'), NULL),
-(7, 3, 'present', datetime('now', '-13 days', '+10 hours'), NULL),
-(12, 3, 'late', datetime('now', '-13 days', '+10 hours', '+20 minutes'), NULL),
-(13, 3, 'present', datetime('now', '-13 days', '+10 hours'), NULL);
+INSERT INTO attendance (studentID, classID, status, recorded_at, notes)
+SELECT u.userID, c.classID,
+       'present',
+       datetime(c.date || ' ' || c.time),
+       NULL
+FROM users u
+JOIN module_students ms ON ms.studentEmailAddress = u.emailAddress AND ms.moduleCode = 'CS301'
+JOIN classes c ON c.moduleCode='CS301' AND c.date = date('now','start of month','-1 months','+25 days') AND c.time='09:00';
 
--- Class 4 (CS303 - 11 days ago) - classID will be 4
-INSERT INTO attendance (studentID, classID, status, recorded_at, notes) VALUES
-(8, 4, 'present', datetime('now', '-11 days', '+8 hours'), NULL),
-(9, 4, 'absent', NULL, NULL),
-(11, 4, 'present', datetime('now', '-11 days', '+8 hours'), NULL),
-(13, 4, 'present', datetime('now', '-11 days', '+8 hours'), NULL);
+-- CS302: add mixed attendance class two months ago (W3)
+INSERT INTO classes (moduleCode, title, venue, description, recurring, date, time, status, created_at, updated_at) VALUES
+('CS302','Web Dev Mixed','Hall B','Mixed attendance','single', date('now','start of month','-2 months','+18 days'), '15:00','completed', datetime('now'), datetime('now'));
 
--- Class 5 (CS301 - 7 days ago) - classID will be 5
-INSERT INTO attendance (studentID, classID, status, recorded_at, notes) VALUES
-(5, 5, 'present', datetime('now', '-7 days', '+8 hours'), NULL),
-(6, 5, 'present', datetime('now', '-7 days', '+8 hours'), NULL),
-(7, 5, 'present', datetime('now', '-7 days', '+8 hours'), NULL),
-(8, 5, 'absent', NULL, NULL),
-(9, 5, 'late', datetime('now', '-7 days', '+8 hours', '+12 minutes'), NULL),
-(10, 5, 'present', datetime('now', '-7 days', '+8 hours'), NULL),
-(11, 5, 'present', datetime('now', '-7 days', '+8 hours'), NULL);
+INSERT INTO attendance (studentID, classID, status, recorded_at, notes)
+SELECT u.userID, c.classID,
+       CASE ((u.userID) % 3)
+            WHEN 0 THEN 'absent'
+            WHEN 1 THEN 'late'
+            ELSE 'present'
+       END,
+       datetime(c.date || ' ' || c.time),
+       NULL
+FROM users u
+JOIN module_students ms ON ms.studentEmailAddress = u.emailAddress AND ms.moduleCode = 'CS302'
+JOIN classes c ON c.moduleCode='CS302' AND c.date = date('now','start of month','-2 months','+18 days') AND c.time='15:00';
 
--- Class 6 (CS302 Lab - 6 days ago) - classID will be 6
-INSERT INTO attendance (studentID, classID, status, recorded_at, notes) VALUES
-(5, 6, 'present', datetime('now', '-6 days', '+14 hours'), NULL),
-(6, 6, 'present', datetime('now', '-6 days', '+14 hours'), NULL),
-(7, 6, 'absent', NULL, 'Medical appointment'),
-(12, 6, 'present', datetime('now', '-6 days', '+14 hours'), NULL),
-(13, 6, 'present', datetime('now', '-6 days', '+14 hours'), NULL);
+-- ==========================
+-- Absent Today metric test: add classes today with some absentees/lates
+INSERT INTO classes (moduleCode, title, venue, description, recurring, date, time, status, created_at, updated_at) VALUES
+('CS301','DS Today','Hall A','Today session','single', date('now'), '10:30','completed', datetime('now'), datetime('now')),
+('CS302','Web Dev Today','Hall B','Today session','single', date('now'), '11:30','completed', datetime('now'), datetime('now'));
 
--- Class 7 (CS304 - 7 days ago) - classID will be 7
-INSERT INTO attendance (studentID, classID, status, recorded_at, notes) VALUES
-(5, 7, 'present', datetime('now', '-7 days', '+14 hours'), NULL),
-(6, 7, 'present', datetime('now', '-7 days', '+14 hours'), NULL),
-(14, 7, 'late', datetime('now', '-7 days', '+14 hours', '+18 minutes'), NULL);
+-- CS301 today: 2 absent, 1 late, rest present
+INSERT INTO attendance (studentID, classID, status, recorded_at, notes)
+SELECT u.userID, c.classID,
+       CASE ((u.userID) % 6)
+            WHEN 0 THEN 'absent'
+            WHEN 3 THEN 'late'
+            ELSE 'present'
+       END,
+       datetime(c.date || ' ' || c.time),
+       NULL
+FROM users u
+JOIN module_students ms ON ms.studentEmailAddress = u.emailAddress AND ms.moduleCode = 'CS301'
+JOIN classes c ON c.moduleCode='CS301' AND c.date = date('now') AND c.time='10:30';
 
--- Class 8 (CS301 - 2 days ago) - classID will be 8
-INSERT INTO attendance (studentID, classID, status, recorded_at, notes) VALUES
-(5, 8, 'present', datetime('now', '-2 days', '+8 hours'), NULL),
-(6, 8, 'present', datetime('now', '-2 days', '+8 hours'), NULL),
-(7, 8, 'present', datetime('now', '-2 days', '+8 hours'), NULL),
-(8, 8, 'present', datetime('now', '-2 days', '+8 hours'), NULL),
-(9, 8, 'present', datetime('now', '-2 days', '+8 hours'), NULL),
-(10, 8, 'late', datetime('now', '-2 days', '+8 hours', '+8 minutes'), NULL),
-(11, 8, 'present', datetime('now', '-2 days', '+8 hours'), NULL);
+-- CS302 today: at least 1 absent
+INSERT INTO attendance (studentID, classID, status, recorded_at, notes)
+SELECT u.userID, c.classID,
+       CASE WHEN (u.userID % 5)=0 THEN 'absent' ELSE 'present' END,
+       datetime(c.date || ' ' || c.time),
+       NULL
+FROM users u
+JOIN module_students ms ON ms.studentEmailAddress = u.emailAddress AND ms.moduleCode = 'CS302'
+JOIN classes c ON c.moduleCode='CS302' AND c.date = date('now') AND c.time='11:30';
 
--- Class 9 (IS201 - 3 days ago) - classID will be 9
-INSERT INTO attendance (studentID, classID, status, recorded_at, notes) VALUES
-(10, 9, 'present', datetime('now', '-3 days', '+12 hours'), NULL),
-(11, 9, 'present', datetime('now', '-3 days', '+12 hours'), NULL),
-(12, 9, 'absent', NULL, NULL);

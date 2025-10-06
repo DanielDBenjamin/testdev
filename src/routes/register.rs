@@ -24,7 +24,7 @@ pub fn Register() -> impl IntoView {
     let on_submit = move |_| {
         message.set(String::new());
         success.set(false);
-        
+
         let data = RegisterData {
             name: name.get(),
             surname: surname.get(),
@@ -33,7 +33,7 @@ pub fn Register() -> impl IntoView {
             confirm_password: confirm.get(),
             role: role.get().to_lowercase(),
         };
-        
+
         register_action.dispatch(data);
     };
 
@@ -44,7 +44,7 @@ pub fn Register() -> impl IntoView {
                 Ok(auth_response) => {
                     message.set(auth_response.message);
                     success.set(auth_response.success);
-                    
+
                     if auth_response.success {
                         // Clear form on success
                         name.set(String::new());
@@ -122,10 +122,10 @@ pub fn Register() -> impl IntoView {
                         on:click=on_submit
                         disabled=move || register_action.pending().get()
                     >
-                        {move || if register_action.pending().get() { 
-                            "Creating Account...".into_view() 
-                        } else { 
-                            "Create Account".into_view() 
+                        {move || if register_action.pending().get() {
+                            "Creating Account...".into_view()
+                        } else {
+                            "Create Account".into_view()
                         }}
                     </button>
 

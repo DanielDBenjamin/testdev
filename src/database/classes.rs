@@ -1,7 +1,7 @@
 #[cfg(feature = "ssr")]
-use sqlx::SqlitePool;
-#[cfg(feature = "ssr")]
 use chrono::Utc;
+#[cfg(feature = "ssr")]
+use sqlx::SqlitePool;
 
 use serde::{Deserialize, Serialize};
 
@@ -16,6 +16,7 @@ pub struct Class {
     pub recurring: Option<String>,
     pub date: String,
     pub time: String,
+    pub duration_minutes: i32,
     pub status: String,
     pub created_at: String,
     pub updated_at: String,
@@ -30,6 +31,7 @@ pub struct CreateClassRequest {
     pub recurring: Option<String>,
     pub date: String,
     pub time: String,
+    pub duration_minutes: i32,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateClassRequest {
@@ -37,7 +39,7 @@ pub struct UpdateClassRequest {
     pub description: Option<String>,
     pub date: String,
     pub time: String,
-    pub duration: i32,
+    pub duration_minutes: i32,
     pub venue: Option<String>,
     pub recurring: Option<String>,
 }
@@ -59,6 +61,8 @@ pub struct DbClass {
     recurring: Option<String>,
     date: String,
     time: String,
+    #[sqlx(rename = "duration_minutes")]
+    duration_minutes: i32,
     status: String,
     created_at: String,
     updated_at: String,
@@ -76,6 +80,7 @@ impl From<DbClass> for Class {
             recurring: db.recurring,
             date: db.date,
             time: db.time,
+            duration_minutes: db.duration_minutes,
             status: db.status,
             created_at: db.created_at,
             updated_at: db.updated_at,
@@ -85,16 +90,13 @@ impl From<DbClass> for Class {
 
 /// Create a new class
 #[cfg(feature = "ssr")]
-pub async fn create_class(
-    pool: &SqlitePool,
-    request: CreateClassRequest,
-) -> Result<Class, String> {
+pub async fn create_class(pool: &SqlitePool, request: CreateClassRequest) -> Result<Class, String> {
     let now = Utc::now().to_rfc3339();
 
     let result = sqlx::query(
         r#"
-        INSERT INTO classes (moduleCode, title, venue, description, recurring, date, time, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'upcoming', ?, ?)
+        INSERT INTO classes (moduleCode, title, venue, description, recurring, date, time, duration_minutes, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?, ?)
         "#,
     )
     .bind(&request.module_code)
@@ -104,6 +106,7 @@ pub async fn create_class(
     .bind(&request.recurring)
     .bind(&request.date)
     .bind(&request.time)
+    .bind(request.duration_minutes)
     .bind(&now)
     .bind(&now)
     .execute(pool)
@@ -112,13 +115,11 @@ pub async fn create_class(
 
     let class_id = result.last_insert_rowid();
 
-    let class = sqlx::query_as::<_, DbClass>(
-        "SELECT * FROM classes WHERE classID = ?"
-    )
-    .bind(class_id)
-    .fetch_one(pool)
-    .await
-    .map_err(|e| format!("Failed to fetch created class: {}", e))?;
+    let class = sqlx::query_as::<_, DbClass>("SELECT * FROM classes WHERE classID = ?")
+        .bind(class_id)
+        .fetch_one(pool)
+        .await
+        .map_err(|e| format!("Failed to fetch created class: {}", e))?;
 
     Ok(class.into())
 }
@@ -168,16 +169,24 @@ pub async fn get_lecturer_classes(
 
 /// Delete a class
 #[cfg(feature = "ssr")]
-pub async fn delete_class(
-    pool: &SqlitePool,
-    class_id: i64,
-) -> Result<(), String> {
+pub async fn delete_class(pool: &SqlitePool, class_id: i64) -> Result<(), String> {
+    // Delete in the correct order to respect foreign key constraints
+
+    // 1. First delete attendance records for this class
     sqlx::query("DELETE FROM attendance WHERE classID = ?")
         .bind(class_id)
         .execute(pool)
         .await
         .map_err(|e| format!("Failed to delete attendance records: {}", e))?;
 
+    // 2. Then delete any sessions for this class
+    sqlx::query("DELETE FROM class_sessions WHERE classID = ?")
+        .bind(class_id)
+        .execute(pool)
+        .await
+        .map_err(|e| format!("Failed to delete class sessions: {}", e))?;
+
+    // 3. Finally delete the class itself
     sqlx::query("DELETE FROM classes WHERE classID = ?")
         .bind(class_id)
         .execute(pool)
@@ -201,7 +210,7 @@ pub async fn update_class(
         r#"
         UPDATE classes 
         SET title = ?, description = ?, date = ?, time = ?, 
-            venue = ?, recurring = ?, updated_at = ?
+            duration_minutes = ?, venue = ?, recurring = ?, updated_at = ?
         WHERE classID = ?
         "#,
     )
@@ -209,6 +218,7 @@ pub async fn update_class(
     .bind(&request.description)
     .bind(&request.date)
     .bind(&request.time)
+    .bind(request.duration_minutes)
     .bind(&request.venue)
     .bind(&request.recurring)
     .bind(&now)
@@ -223,17 +233,12 @@ pub async fn update_class(
 
 /// Get a single class by ID
 #[cfg(feature = "ssr")]
-pub async fn get_class_by_id(
-    pool: &SqlitePool,
-    class_id: i64,
-) -> Result<Class, String> {
-    let class = sqlx::query_as::<_, DbClass>(
-        "SELECT * FROM classes WHERE classID = ?"
-    )
-    .bind(class_id)
-    .fetch_one(pool)
-    .await
-    .map_err(|e| format!("Failed to fetch class: {}", e))?;
+pub async fn get_class_by_id(pool: &SqlitePool, class_id: i64) -> Result<Class, String> {
+    let class = sqlx::query_as::<_, DbClass>("SELECT * FROM classes WHERE classID = ?")
+        .bind(class_id)
+        .fetch_one(pool)
+        .await
+        .map_err(|e| format!("Failed to fetch class: {}", e))?;
 
     Ok(class.into())
 }

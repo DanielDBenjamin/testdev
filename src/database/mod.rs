@@ -10,8 +10,9 @@ pub mod models;
 #[cfg(feature = "ssr")]
 pub mod auth;
 
-pub mod modules;
+pub mod class_sessions;
 pub mod classes;
+pub mod modules;
 
 #[cfg(feature = "ssr")]
 pub use connection::*;
@@ -25,8 +26,9 @@ pub use models::*;
 #[cfg(feature = "ssr")]
 pub use auth::*;
 
-pub use modules::*;
+pub use class_sessions::*;
 pub use classes::*;
+pub use modules::*;
 
 #[cfg(feature = "ssr")]
 pub use auth::print_test_hash;

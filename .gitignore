@@ -19,3 +19,13 @@ clock_it.db-shm
 clock_it.db-wal
 *.sqlite
 *.sqlite3
+
+# Node.js dependencies (for Tailwind CSS and build tools)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+.next/
+out/

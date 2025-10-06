@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 #[component]
-pub fn Header<F>(title: F, subtitle: String) -> impl IntoView 
+pub fn Header<F>(title: F, subtitle: String) -> impl IntoView
 where
     F: Fn() -> String + 'static + Send,
 {

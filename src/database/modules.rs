@@ -1,7 +1,7 @@
 #[cfg(feature = "ssr")]
-use sqlx::SqlitePool;
-#[cfg(feature = "ssr")]
 use chrono::Utc;
+#[cfg(feature = "ssr")]
+use sqlx::SqlitePool;
 
 use serde::{Deserialize, Serialize};
 
@@ -75,13 +75,11 @@ pub async fn create_module(
     request: CreateModuleRequest,
 ) -> Result<Module, String> {
     // Check if module code already exists
-    let existing = sqlx::query_as::<_, DbModule>(
-        "SELECT * FROM modules WHERE moduleCode = ?"
-    )
-    .bind(&request.module_code)
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| format!("Database error: {}", e))?;
+    let existing = sqlx::query_as::<_, DbModule>("SELECT * FROM modules WHERE moduleCode = ?")
+        .bind(&request.module_code)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
 
     if existing.is_some() {
         return Err("Module with this code already exists".to_string());
@@ -120,13 +118,11 @@ pub async fn create_module(
     .map_err(|e| format!("Failed to link module to lecturer: {}", e))?;
 
     // Fetch and return the created module
-    let module = sqlx::query_as::<_, DbModule>(
-        "SELECT * FROM modules WHERE moduleCode = ?"
-    )
-    .bind(&request.module_code)
-    .fetch_one(pool)
-    .await
-    .map_err(|e| format!("Failed to fetch created module: {}", e))?;
+    let module = sqlx::query_as::<_, DbModule>("SELECT * FROM modules WHERE moduleCode = ?")
+        .bind(&request.module_code)
+        .fetch_one(pool)
+        .await
+        .map_err(|e| format!("Failed to fetch created module: {}", e))?;
 
     Ok(module.into())
 }
@@ -153,7 +149,6 @@ pub async fn get_lecturer_modules(
 
     Ok(modules.into_iter().map(|m| m.into()).collect())
 }
-
 
 #[cfg(feature = "ssr")]
 pub async fn get_lecturer_modules_with_stats(
@@ -184,29 +179,26 @@ pub async fn get_lecturer_modules_with_stats(
 
     Ok(modules
         .into_iter()
-        .map(|(code, title, desc, class_count, student_count)| ModuleWithStats {
-            module_code: code,
-            module_title: title,
-            description: desc,
-            student_count,
-            class_count,
-        })
+        .map(
+            |(code, title, desc, class_count, student_count)| ModuleWithStats {
+                module_code: code,
+                module_title: title,
+                description: desc,
+                student_count,
+                class_count,
+            },
+        )
         .collect())
 }
 
 /// Get a single module by code
 #[cfg(feature = "ssr")]
-pub async fn get_module(
-    pool: &SqlitePool,
-    module_code: &str,
-) -> Result<Option<Module>, String> {
-    let module = sqlx::query_as::<_, DbModule>(
-        "SELECT * FROM modules WHERE moduleCode = ?"
-    )
-    .bind(module_code)
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| format!("Database error: {}", e))?;
+pub async fn get_module(pool: &SqlitePool, module_code: &str) -> Result<Option<Module>, String> {
+    let module = sqlx::query_as::<_, DbModule>("SELECT * FROM modules WHERE moduleCode = ?")
+        .bind(module_code)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
 
     Ok(module.map(|m| m.into()))
 }
@@ -234,23 +226,18 @@ pub async fn update_module(
     .await
     .map_err(|e| format!("Failed to update module: {}", e))?;
 
-    let module = sqlx::query_as::<_, DbModule>(
-        "SELECT * FROM modules WHERE moduleCode = ?"
-    )
-    .bind(&request.module_code)
-    .fetch_one(pool)
-    .await
-    .map_err(|e| format!("Failed to fetch updated module: {}", e))?;
+    let module = sqlx::query_as::<_, DbModule>("SELECT * FROM modules WHERE moduleCode = ?")
+        .bind(&request.module_code)
+        .fetch_one(pool)
+        .await
+        .map_err(|e| format!("Failed to fetch updated module: {}", e))?;
 
     Ok(module.into())
 }
 
 /// Delete a module
 #[cfg(feature = "ssr")]
-pub async fn delete_module(
-    pool: &SqlitePool,
-    module_code: &str,
-) -> Result<(), String> {
+pub async fn delete_module(pool: &SqlitePool, module_code: &str) -> Result<(), String> {
     // Delete related records first (foreign key constraints)
     sqlx::query("DELETE FROM lecturer_module WHERE moduleCode = ?")
         .bind(module_code)

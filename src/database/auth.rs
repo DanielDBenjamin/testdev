@@ -1,11 +1,11 @@
 #[cfg(feature = "ssr")]
-use crate::database::models::{User, CreateUserRequest};
+use crate::database::models::{CreateUserRequest, User};
 #[cfg(feature = "ssr")]
 use crate::types::UserProfile;
 #[cfg(feature = "ssr")]
-use sqlx::SqlitePool;
-#[cfg(feature = "ssr")]
 use chrono::Utc;
+#[cfg(feature = "ssr")]
+use sqlx::SqlitePool;
 
 /// Simple password hashing (for development only - replace with bcrypt in production)
 #[cfg(feature = "ssr")]
@@ -13,7 +13,7 @@ fn hash_password(password: &str) -> String {
     // Simple hash for development - in production use bcrypt
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
-    
+
     let mut hasher = DefaultHasher::new();
     password.hash(&mut hasher);
     format!("simple_hash_{}", hasher.finish())
@@ -27,15 +27,16 @@ fn verify_password(password: &str, hash: &str) -> bool {
 
 /// Create a new user account
 #[cfg(feature = "ssr")]
-pub async fn create_user(pool: &SqlitePool, request: CreateUserRequest) -> Result<UserProfile, String> {
+pub async fn create_user(
+    pool: &SqlitePool,
+    request: CreateUserRequest,
+) -> Result<UserProfile, String> {
     // Check if user already exists
-    let existing_user = sqlx::query_as::<_, User>(
-        "SELECT * FROM users WHERE emailAddress = ?"
-    )
-    .bind(&request.email)
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| format!("Database error: {}", e))?;
+    let existing_user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE emailAddress = ?")
+        .bind(&request.email)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
 
     if existing_user.is_some() {
         return Err("User with this email already exists".to_string());
@@ -67,29 +68,29 @@ pub async fn create_user(pool: &SqlitePool, request: CreateUserRequest) -> Resul
 
     // Get the created user
     let user_id = result.last_insert_rowid();
-    
-    let user = sqlx::query_as::<_, User>(
-        "SELECT * FROM users WHERE userID = ?"
-    )
-    .bind(user_id)
-    .fetch_one(pool)
-    .await
-    .map_err(|e| format!("Failed to fetch created user: {}", e))?;
+
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE userID = ?")
+        .bind(user_id)
+        .fetch_one(pool)
+        .await
+        .map_err(|e| format!("Failed to fetch created user: {}", e))?;
 
     Ok(user.into())
 }
 
 /// Authenticate user login
 #[cfg(feature = "ssr")]
-pub async fn authenticate_user(pool: &SqlitePool, email: &str, password: &str) -> Result<UserProfile, String> {
+pub async fn authenticate_user(
+    pool: &SqlitePool,
+    email: &str,
+    password: &str,
+) -> Result<UserProfile, String> {
     // Find user by email
-    let user = sqlx::query_as::<_, User>(
-        "SELECT * FROM users WHERE emailAddress = ?"
-    )
-    .bind(email)
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| format!("Database error: {}", e))?;
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE emailAddress = ?")
+        .bind(email)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
 
     let user = match user {
         Some(user) => user,
@@ -108,28 +109,30 @@ pub async fn authenticate_user(pool: &SqlitePool, email: &str, password: &str) -
 
 /// Get user by ID
 #[cfg(feature = "ssr")]
-pub async fn get_user_by_id(pool: &SqlitePool, user_id: i64) -> Result<Option<UserProfile>, String> {
-    let user = sqlx::query_as::<_, User>(
-        "SELECT * FROM users WHERE userID = ?"
-    )
-    .bind(user_id)
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| format!("Database error: {}", e))?;
+pub async fn get_user_by_id(
+    pool: &SqlitePool,
+    user_id: i64,
+) -> Result<Option<UserProfile>, String> {
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE userID = ?")
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
 
     Ok(user.map(|u| u.into()))
 }
 
 /// Get user by email
 #[cfg(feature = "ssr")]
-pub async fn get_user_by_email(pool: &SqlitePool, email: &str) -> Result<Option<UserProfile>, String> {
-    let user = sqlx::query_as::<_, User>(
-        "SELECT * FROM users WHERE userID = ?"
-    )
-    .bind(email)
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| format!("Database error: {}", e))?;
+pub async fn get_user_by_email(
+    pool: &SqlitePool,
+    email: &str,
+) -> Result<Option<UserProfile>, String> {
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE emailAddress = ?")
+        .bind(email)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
 
     Ok(user.map(|u| u.into()))
 }
@@ -142,4 +145,27 @@ pub fn print_test_hash() {
     println!("Password: {}", password);
     println!("Hash: {}", hash);
     println!("=================================\n");
+}
+#[cfg(feature = "ssr")]
+pub async fn update_user_password_by_email(
+    pool: &SqlitePool,
+    email: &str,
+    new_password: &str,
+) -> Result<(), String> {
+    let hashed = hash_password(new_password);
+    let now = Utc::now().to_rfc3339();
+    let result =
+        sqlx::query("UPDATE users SET password = ?, updated_at = ? WHERE emailAddress = ?")
+            .bind(&hashed)
+            .bind(&now)
+            .bind(&email.to_lowercase())
+            .execute(pool)
+            .await
+            .map_err(|e| format!("Failed to update password: {}", e))?;
+
+    if result.rows_affected() == 0 {
+        return Err("No user found with that email".to_string());
+    }
+
+    Ok(())
 }

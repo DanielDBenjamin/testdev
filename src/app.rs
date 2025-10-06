@@ -1,16 +1,19 @@
+use crate::components::{NavBar, TopBar};
+use crate::pages::{
+    RolePage, StudentEditProfilePage, StudentHomePage, StudentLoginPage, StudentProfilePage,
+    StudentStatisticsPage,
+};
+use crate::routes::{
+    About, ClassQrFullscreenPage, ClassQrPage, ClassesPage, EditClass, EditModule, Error, HomePage,
+    Login, NewClass, NewModule, Profile, Register, Statistics, Timetable,
+};
 use leptos::prelude::*;
-use leptos_router::StaticSegment;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
+use leptos_router::StaticSegment;
 use leptos_router::{
     components::{Route, Router, Routes},
     hooks::use_location,
 };
-use crate::routes::{
-    About, ClassesPage, Error, HomePage, Login, NewClass, NewModule, Profile, Register, Statistics,
-    Timetable, EditClass, EditModule
-};
-use crate::components::{NavBar, TopBar};
-use crate::pages::{ StudentHomePage, StudentLoginPage, RolePage, StudentProfilePage, StudentEditProfilePage, StudentStatisticsPage };
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -33,7 +36,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
-    
+
     crate::user_context::init_user_context();
 
     view! {
@@ -75,7 +78,11 @@ fn AppShell() -> impl IntoView {
     };
     let show_footer = Signal::derive(move || show_sidebar.get());
     let shell_class = Signal::derive(move || {
-        if show_sidebar.get() { "app-shell".to_string() } else { "app-shell no-sidebar".to_string() }
+        if show_sidebar.get() {
+            "app-shell".to_string()
+        } else {
+            "app-shell no-sidebar".to_string()
+        }
     });
     view! {
     <div class=move || shell_class.get()>
@@ -99,6 +106,8 @@ fn AppShell() -> impl IntoView {
                     <Route path=StaticSegment("about") view=About/>
                     <Route path=(StaticSegment("lecturer"), StaticSegment("profile")) view=Profile/>
                     <Route path=(StaticSegment("classes"), StaticSegment("edit")) view=EditClass/>
+                    <Route path=(StaticSegment("classes"), StaticSegment("qr")) view=ClassQrPage/>
+                    <Route path=(StaticSegment("classes"), StaticSegment("qr"), StaticSegment("large")) view=ClassQrFullscreenPage/>
                     // add student pages
                     <Route path=(StaticSegment("student"), StaticSegment("home")) view=StudentHomePage/>
                     <Route path=(StaticSegment("student"), StaticSegment("login")) view=StudentLoginPage/>
@@ -106,7 +115,6 @@ fn AppShell() -> impl IntoView {
                     <Route path=(StaticSegment("student"), StaticSegment("profile")) view=StudentProfilePage/>
                     <Route path=(StaticSegment("student"), StaticSegment("profile"), StaticSegment("edit")) view=StudentEditProfilePage/>
                     <Route path=(StaticSegment("student"), StaticSegment("statistics")) view=StudentStatisticsPage/>
-
                 </Routes>
             </main>
             <Show when=move || show_footer.get()>

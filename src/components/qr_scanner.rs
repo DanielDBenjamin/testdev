@@ -4,14 +4,14 @@ use leptos::task::spawn_local;
 
 #[cfg(target_arch = "wasm32")]
 use {
+    js_sys,
     leptos::wasm_bindgen::prelude::*,
     leptos::wasm_bindgen::JsCast,
-    wasm_bindgen_futures::JsFuture,
-    js_sys,
     leptos::web_sys::{
-        HtmlCanvasElement, HtmlVideoElement, MediaStream, MediaStreamConstraints,
-        CanvasRenderingContext2d, ImageData,
+        CanvasRenderingContext2d, HtmlCanvasElement, HtmlVideoElement, ImageData, MediaStream,
+        MediaStreamConstraints,
     },
+    wasm_bindgen_futures::JsFuture,
 };
 
 #[component]
@@ -210,7 +210,9 @@ fn start_scanning(
                             if let Ok(ctx) = context.dyn_into::<CanvasRenderingContext2d>() {
                                 let _ = ctx.draw_image_with_html_video_element(&video, 0.0, 0.0);
 
-                                if let Ok(image_data) = ctx.get_image_data(0.0, 0.0, width as f64, height as f64) {
+                                if let Ok(image_data) =
+                                    ctx.get_image_data(0.0, 0.0, width as f64, height as f64)
+                                {
                                     if let Some(qr_data) = decode_qr(&image_data) {
                                         set_scanning.set(false);
                                         on_scan.run(qr_data);
@@ -246,11 +248,10 @@ fn decode_qr(image_data: &ImageData) -> Option<String> {
     }
 
     // Prepare image for rqrr
-    let mut img = rqrr::PreparedImage::prepare_from_greyscale(
-        width as usize,
-        height as usize,
-        |x, y| gray_data[y * width as usize + x],
-    );
+    let mut img =
+        rqrr::PreparedImage::prepare_from_greyscale(width as usize, height as usize, |x, y| {
+            gray_data[y * width as usize + x]
+        });
 
     // Try to find and decode QR codes
     let grids = img.detect_grids();

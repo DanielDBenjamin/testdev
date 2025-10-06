@@ -1,12 +1,12 @@
+use crate::user_context::clear_current_user;
 use leptos::prelude::*;
 use leptos_router::components::A;
 use leptos_router::hooks::{use_location, use_navigate};
-use crate::user_context::clear_current_user;
 
 #[component]
 pub fn NavBar() -> impl IntoView {
     let navigate = use_navigate();
-    
+
     let handle_signout = move |_| {
         clear_current_user();
         navigate("/", Default::default());
@@ -39,7 +39,11 @@ fn NavLink(href: &'static str, label: &'static str, icon: &'static str) -> impl 
     });
 
     let classes = move || {
-        if is_active.get() { "nav-link active".to_string() } else { "nav-link".to_string() }
+        if is_active.get() {
+            "nav-link active".to_string()
+        } else {
+            "nav-link".to_string()
+        }
     };
 
     view! {

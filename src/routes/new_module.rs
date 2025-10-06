@@ -1,22 +1,22 @@
-use leptos::prelude::*;
-use leptos_router::components::A;
-use leptos_router::hooks::use_navigate;
 use crate::routes::module_functions::create_module_fn;
 use crate::routes::student_functions::*;
 use crate::user_context::get_current_user;
+use leptos::prelude::*;
 use leptos::web_sys;
+use leptos_router::components::A;
+use leptos_router::hooks::use_navigate;
 
 #[component]
 pub fn NewModule() -> impl IntoView {
     let current_user = get_current_user();
     let navigate = use_navigate();
-    
+
     let module_code = RwSignal::new(String::new());
     let title = RwSignal::new(String::new());
     let desc = RwSignal::new(String::new());
     let message = RwSignal::new(String::new());
     let success = RwSignal::new(false);
-    
+
     // Student management state
     let students = RwSignal::new(Vec::<StudentInfo>::new());
     let new_student_email = RwSignal::new(String::new());
@@ -27,63 +27,59 @@ pub fn NewModule() -> impl IntoView {
     let student_name_to_remove = RwSignal::new(String::new());
     let csv_content = RwSignal::new(String::new());
     let student_message = RwSignal::new(String::new());
-    
+
     let created_module_code = RwSignal::new(String::new());
 
-    let create_action = Action::new(move |(code, title_val, desc_val, email): &(String, String, Option<String>, String)| {
-        let code = code.clone();
-        let title_val = title_val.clone();
-        let desc_val = desc_val.clone();
-        let email = email.clone();
-        async move {
-            create_module_fn(code, title_val, desc_val, email).await
-        }
-    });
+    let create_action = Action::new(
+        move |(code, title_val, desc_val, email): &(String, String, Option<String>, String)| {
+            let code = code.clone();
+            let title_val = title_val.clone();
+            let desc_val = desc_val.clone();
+            let email = email.clone();
+            async move { create_module_fn(code, title_val, desc_val, email).await }
+        },
+    );
 
     let enroll_action = Action::new(move |request: &EnrollStudentRequest| {
         let request = request.clone();
-        async move {
-            enroll_student(request).await
-        }
+        async move { enroll_student(request).await }
     });
 
     let bulk_enroll_action = Action::new(move |(module_code, emails): &(String, Vec<String>)| {
         let module_code = module_code.clone();
         let emails = emails.clone();
-        async move {
-            bulk_enroll_students(module_code, emails).await
-        }
+        async move { bulk_enroll_students(module_code, emails).await }
     });
 
     let unenroll_action = Action::new(move |(module_code, email): &(String, String)| {
         let module_code = module_code.clone();
         let email = email.clone();
-        async move {
-            unenroll_student(module_code, email).await
-        }
+        async move { unenroll_student(module_code, email).await }
     });
 
     // Handle module creation
     let on_submit = move |_| {
         message.set(String::new());
         success.set(false);
-        
+
         let code = module_code.get().trim().to_string();
         if code.is_empty() {
             message.set("Please enter a module code".to_string());
             success.set(false);
             return;
         }
-        
+
         if title.get().trim().is_empty() {
             message.set("Please enter a module title".to_string());
             success.set(false);
             return;
         }
-        
+
         let email = match current_user.get() {
             Some(user) => {
-                web_sys::console::log_1(&format!("Creating module for email: {}", user.email_address).into());
+                web_sys::console::log_1(
+                    &format!("Creating module for email: {}", user.email_address).into(),
+                );
                 user.email_address
             }
             None => {
@@ -92,13 +88,13 @@ pub fn NewModule() -> impl IntoView {
                 return;
             }
         };
-        
+
         let desc_val = if desc.get().trim().is_empty() {
             None
         } else {
             Some(desc.get())
         };
-        
+
         created_module_code.set(code.clone());
         create_action.dispatch((code, title.get(), desc_val, email));
     };
@@ -111,7 +107,7 @@ pub fn NewModule() -> impl IntoView {
                     Ok(response) => {
                         message.set(response.message.clone());
                         success.set(response.success);
-                        
+
                         // Keep form open to allow adding students
                         // User will click "Done" button when finished
                     }
@@ -131,7 +127,7 @@ pub fn NewModule() -> impl IntoView {
             student_message.set("Please enter a student email".to_string());
             return;
         }
-        
+
         let module = created_module_code.get();
         if module.is_empty() {
             student_message.set("Please create the module first".to_string());
@@ -150,7 +146,7 @@ pub fn NewModule() -> impl IntoView {
             match result {
                 Ok(response) => {
                     student_message.set(response.message.clone());
-                    
+
                     if response.success {
                         if let Some(student) = response.student {
                             students.update(|s| s.push(student));
@@ -204,11 +200,11 @@ pub fn NewModule() -> impl IntoView {
             match result {
                 Ok(response) => {
                     student_message.set(response.message.clone());
-                    
+
                     if response.success {
                         csv_content.set(String::new());
                         show_import_modal.set(false);
-                        
+
                         // Reload students list
                         let module = created_module_code.get();
                         if !module.is_empty() {
@@ -235,7 +231,7 @@ pub fn NewModule() -> impl IntoView {
         student_name_to_remove.set(name);
         show_remove_student_modal.set(true);
     };
-    
+
     // Confirm student removal
     let on_confirm_remove_student = move |_| {
         let email = student_to_remove.get();
@@ -243,7 +239,7 @@ pub fn NewModule() -> impl IntoView {
         unenroll_action.dispatch((module, email));
         show_remove_student_modal.set(false);
     };
-    
+
     let on_cancel_remove_student = move |_| {
         show_remove_student_modal.set(false);
     };
@@ -254,7 +250,7 @@ pub fn NewModule() -> impl IntoView {
             match result {
                 Ok(response) => {
                     student_message.set(response.message.clone());
-                    
+
                     if response.success {
                         // Reload the entire student list from server
                         let module = created_module_code.get();
@@ -284,28 +280,28 @@ pub fn NewModule() -> impl IntoView {
 
             <div class="form-card">
                 <h3 class="heading">"Module Information"</h3>
-                
+
                 <label class="label" style="margin-top:6px;">"Module Code "<span style="color:#ef4444;">"*"</span></label>
-                <input 
-                    class="input" 
-                    type="text" 
-                    placeholder="e.g., CS112 or MATH201" 
-                    bind:value=module_code 
+                <input
+                    class="input"
+                    type="text"
+                    placeholder="e.g., CS112 or MATH201"
+                    bind:value=module_code
                     disabled=move || !created_module_code.get().is_empty()
                 />
-                
+
                 <label class="label" style="margin-top:10px;">"Module Title "<span style="color:#ef4444;">"*"</span></label>
-                <input 
-                    class="input" 
-                    placeholder="e.g., Introduction to Programming" 
-                    bind:value=title 
+                <input
+                    class="input"
+                    placeholder="e.g., Introduction to Programming"
+                    bind:value=title
                     disabled=move || !created_module_code.get().is_empty()
                 />
 
                 <label class="label" style="margin-top:10px;">"Description"</label>
-                <textarea 
-                    class="textarea" 
-                    placeholder="Enter module description..." 
+                <textarea
+                    class="textarea"
+                    placeholder="Enter module description..."
                     bind:value=desc
                     disabled=move || !created_module_code.get().is_empty()
                 ></textarea>
@@ -318,15 +314,15 @@ pub fn NewModule() -> impl IntoView {
 
                 <Show when=move || created_module_code.get().is_empty()>
                     <div class="actions-row">
-                        <button 
-                            class="btn btn-accent" 
+                        <button
+                            class="btn btn-accent"
                             on:click=on_submit
                             disabled=move || create_action.pending().get()
                         >
-                            {move || if create_action.pending().get() { 
-                                "Creating Module...".into_view() 
-                            } else { 
-                                "Create Module".into_view() 
+                            {move || if create_action.pending().get() {
+                                "Creating Module...".into_view()
+                            } else {
+                                "Create Module".into_view()
                             }}
                         </button>
                         <A href="/home" attr:class="btn btn-outline">"Cancel"</A>
@@ -340,11 +336,11 @@ pub fn NewModule() -> impl IntoView {
                         <div class="heading" style="display:flex; align-items:center; justify-content:space-between;">
                             <span>"Student Management"</span>
                             <div style="display:flex; gap:8px;">
-                                <button 
+                                <button
                                     class="btn btn-outline"
                                     on:click=move |_| show_import_modal.set(true)
                                 >"⭳ Import Class List"</button>
-                                <button 
+                                <button
                                     class="btn btn-accent"
                                     on:click=move |_| {
                                         new_student_email.set(String::new());
@@ -387,8 +383,8 @@ pub fn NewModule() -> impl IntoView {
                                                     <td>{full_name.clone()}</td>
                                                     <td>{email.clone()}</td>
                                                     <td>
-                                                        <button 
-                                                            class="btn btn-outline btn-small" 
+                                                        <button
+                                                            class="btn btn-outline btn-small"
                                                             style="color:#ef4444; border-color:#fecaca;"
                                                             on:click=move |_| {
                                                                 handle_remove(email.clone(), full_name.clone());
@@ -416,26 +412,26 @@ pub fn NewModule() -> impl IntoView {
                     <div class="modal-content" on:click=|e| e.stop_propagation()>
                         <h2 class="modal-title">"Add Student"</h2>
                         <p class="modal-text">"Enter the student's email address to enroll them in this module."</p>
-                        
-                        <input 
-                            class="input" 
-                            type="email" 
+
+                        <input
+                            class="input"
+                            type="email"
                             placeholder="student@university.ac.za"
                             bind:value=new_student_email
                             style="margin-bottom:16px;"
                         />
-                        
+
                         <div class="modal-actions">
                             <button class="btn btn-outline" on:click=move |_| show_add_modal.set(false)>"Cancel"</button>
-                            <button 
-                                class="btn btn-accent" 
+                            <button
+                                class="btn btn-accent"
                                 on:click=on_add_student
                                 disabled=move || enroll_action.pending().get()
                             >
-                                {move || if enroll_action.pending().get() { 
-                                    "Adding...".into_view() 
-                                } else { 
-                                    "Add Student".into_view() 
+                                {move || if enroll_action.pending().get() {
+                                    "Adding...".into_view()
+                                } else {
+                                    "Add Student".into_view()
                                 }}
                             </button>
                         </div>
@@ -449,25 +445,25 @@ pub fn NewModule() -> impl IntoView {
                     <div class="modal-content" on:click=|e| e.stop_propagation()>
                         <h2 class="modal-title">"Import Class List"</h2>
                         <p class="modal-text">"Paste email addresses (one per line or comma-separated):"</p>
-                        
-                        <textarea 
-                            class="textarea" 
+
+                        <textarea
+                            class="textarea"
                             placeholder="student1@university.ac.za\nstudent2@university.ac.za\nstudent3@university.ac.za"
                             bind:value=csv_content
                             style="margin-bottom:16px; min-height:200px;"
                         ></textarea>
-                        
+
                         <div class="modal-actions">
                             <button class="btn btn-outline" on:click=move |_| show_import_modal.set(false)>"Cancel"</button>
-                            <button 
-                                class="btn btn-accent" 
+                            <button
+                                class="btn btn-accent"
                                 on:click=on_import_csv
                                 disabled=move || bulk_enroll_action.pending().get()
                             >
-                                {move || if bulk_enroll_action.pending().get() { 
-                                    "Importing...".into_view() 
-                                } else { 
-                                    "Import Students".into_view() 
+                                {move || if bulk_enroll_action.pending().get() {
+                                    "Importing...".into_view()
+                                } else {
+                                    "Import Students".into_view()
                                 }}
                             </button>
                         </div>
@@ -485,18 +481,18 @@ pub fn NewModule() -> impl IntoView {
                             <strong>{move || student_name_to_remove.get()}</strong>
                             " from this module?"
                         </p>
-                        
+
                         <div class="modal-actions">
                             <button class="btn btn-outline" on:click=on_cancel_remove_student>"Cancel"</button>
-                            <button 
-                                class="btn btn-danger" 
+                            <button
+                                class="btn btn-danger"
                                 on:click=on_confirm_remove_student
                                 disabled=move || unenroll_action.pending().get()
                             >
-                                {move || if unenroll_action.pending().get() { 
-                                    "Removing...".into_view() 
-                                } else { 
-                                    "Remove Student".into_view() 
+                                {move || if unenroll_action.pending().get() {
+                                    "Removing...".into_view()
+                                } else {
+                                    "Remove Student".into_view()
                                 }}
                             </button>
                         </div>

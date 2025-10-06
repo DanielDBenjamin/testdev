@@ -1,11 +1,9 @@
+use crate::database::classes::Class;
 use leptos::prelude::*;
 use leptos_router::components::A;
-use crate::database::classes::Class;
 
 #[component]
-pub fn ClassList(
-    #[prop(into)] classes: Signal<Vec<Class>>,
-) -> impl IntoView {
+pub fn ClassList(#[prop(into)] classes: Signal<Vec<Class>>) -> impl IntoView {
     view! {
         <div class="class-list-container">
             <Show
@@ -21,12 +19,12 @@ pub fn ClassList(
                             Some('C') if class.module_code.contains("S3") => "dot-blue",
                             _ => "dot-green",
                         };
-                        
+
                         let class_id = class.class_id;
-                        
+
                         view! {
                             <li class="class-item">
-                                <A 
+                                <A
                                     href=format!("/classes/edit?id={}", class_id)
                                     attr:class="class-item-link"
                                 >
@@ -34,7 +32,7 @@ pub fn ClassList(
                                     <div class="class-info">
                                         <div class="class-title">{class.title.clone()}</div>
                                         <div class="class-sub">
-                                            {class.time.clone()} 
+                                            {class.time.clone()}
                                             {class.venue.as_ref().map(|v| format!(" – {}", v)).unwrap_or_default()}
                                         </div>
                                     </div>

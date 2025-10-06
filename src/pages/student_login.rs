@@ -1,30 +1,65 @@
-
-use leptos::prelude::*;
+use crate::routes::auth_functions::LoginUser;
+use crate::user_context::set_current_user;
 use leptos::ev::SubmitEvent;
+use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
 
 #[component]
 pub fn StudentLoginPage() -> impl IntoView {
     let navigate = use_navigate();
-    
+
     // Create signals for form inputs
     let (student_id, set_student_id) = signal(String::new());
     let (password, set_password) = signal(String::new());
     let (show_password, set_show_password) = signal(false);
+    let feedback = RwSignal::new(None::<(bool, String)>);
+
+    let login_action = ServerAction::<LoginUser>::new();
+
+    Effect::new({
+        let feedback = feedback.clone();
+        move |_| {
+            if login_action.pending().get() {
+                feedback.set(None);
+            }
+        }
+    });
+
+    Effect::new({
+        let navigate = navigate.clone();
+        let feedback = feedback.clone();
+        move |_| {
+            if let Some(result) = login_action.value().get() {
+                match result {
+                    Ok(response) => {
+                        if response.success {
+                            if let Some(user) = response.user {
+                                set_current_user(user.clone());
+                                navigate("/student/home", Default::default());
+                            }
+                        } else {
+                            feedback.set(Some((false, response.message.clone())));
+                        }
+                    }
+                    Err(err) => {
+                        feedback.set(Some((false, err.to_string())));
+                    }
+                }
+            }
+        }
+    });
 
     // Handle form submission
     let handle_submit = move |ev: SubmitEvent| {
         ev.prevent_default();
-        
+
         let student_id_value = student_id.get();
-        let _password_value = password.get();
-        
-        leptos::logging::log!("Login attempt - Student ID: {}, Password: [hidden]", student_id_value);
-        
-        // Here you would typically make an API call to authenticate
-        // For now, just navigate to home page
-        let navigate = navigate.clone();
-        navigate("/student/home", Default::default());
+        let password_value = password.get();
+
+        login_action.dispatch(LoginUser {
+            email: student_id_value,
+            password: password_value,
+        });
     };
 
     // Toggle password visibility
@@ -33,37 +68,37 @@ pub fn StudentLoginPage() -> impl IntoView {
     };
 
     view! {
-        <div class="mobile-container">
+        <div class="student-mobile-container">
             {/* Header with logo and tagline */}
-            <div class="header-section">
-                <div class="logo-container">
-                    <img src="/logo.png" srcset="/logo.png 1x" alt="Clock It" class="brand-logo-img" width="160" height="60" />
+            <div class="student-header-section">
+                <div class="student-logo-container">
+                    <img src="/logo.png" srcset="/logo.png 1x" alt="Clock It" class="student-brand-logo-img" width="160" height="60" />
                 </div>
-                <p class="tagline">"Track your time, manage your life"</p>
+                <p class="student-tagline">"Track your time, manage your life"</p>
             </div>
 
             {/* Login form card */}
-            <div class="login-card">
-                <div class="login-header">
-                    <h2 class="login-title">"Welcome back"</h2>
-                    <p class="login-subtitle">"Sign in to your Clock It account"</p>
+            <div class="student-login-card">
+                <div class="student-login-header">
+                    <h2 class="student-login-title">"Welcome back"</h2>
+                    <p class="student-login-subtitle">"Sign in to your Clock It account"</p>
                 </div>
 
-                <form class="login-form" on:submit=handle_submit>
-                    <div class="form-group">
-                        <label class="form-label" for="student-id">"Student ID"</label>
-                        <div class="input-container">
+                <form class="student-login-form" on:submit=handle_submit>
+                    <div class="student-form-group">
+                        <label class="student-form-label" for="student-id">"Student ID"</label>
+                        <div class="student-input-container">
                             <input
                                 type="text"
                                 id="student-id"
-                                class="form-input"
-                                placeholder="Enter your student ID"
+                                class="student-form-input"
+                                placeholder="Enter your student ID or email"
                                 prop:value=student_id
                                 on:input=move |ev| {
                                     set_student_id.set(event_target_value(&ev));
                                 }
                             />
-                            <div class="input-icon">
+                            <div class="student-input-icon">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                                     <polyline points="22,6 12,13 2,6"></polyline>
@@ -72,13 +107,13 @@ pub fn StudentLoginPage() -> impl IntoView {
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label" for="password">"Password"</label>
-                        <div class="input-container">
+                    <div class="student-form-group">
+                        <label class="student-form-label" for="password">"Password"</label>
+                        <div class="student-input-container">
                             <input
                                 type=move || if show_password.get() { "text" } else { "password" }
                                 id="password"
-                                class="form-input"
+                                class="student-form-input"
                                 placeholder="Enter your password"
                                 prop:value=password
                                 on:input=move |ev| {
@@ -87,7 +122,7 @@ pub fn StudentLoginPage() -> impl IntoView {
                             />
                             <button
                                 type="button"
-                                class="password-toggle"
+                                class="student-password-toggle"
                                 on:click=toggle_password
                             >
                                 {move || if show_password.get() {
@@ -109,22 +144,39 @@ pub fn StudentLoginPage() -> impl IntoView {
                         </div>
                     </div>
 
-                    <button type="submit" class="login-button">
-                        "Sign In"
+                    <button
+                        type="submit"
+                        class="student-login-button"
+                        disabled=move || login_action.pending().get()
+                    >
+                        {move || if login_action.pending().get() {
+                            "Signing in…"
+                        } else {
+                            "Sign In"
+                        }}
                     </button>
                 </form>
 
-                <div class="login-footer">
-                    <a href="#" class="forgot-link">"Forgot password?"</a>
-                    <a href="#" class="create-link">"Create account"</a>
+                {move || {
+                    feedback
+                        .get()
+                        .map(|(_, message)| {
+                            view! { <p class="student-login-feedback">{message}</p> }.into_any()
+                        })
+                        .unwrap_or_else(|| view! { <></> }.into_any())
+                }}
+
+                <div class="student-login-footer">
+                    <a href="#" class="student-forgot-link">"Forgot password?"</a>
+                    <a href="#" class="student-create-link">"Create account"</a>
                 </div>
 
-                <div class="terms-section">
-                    <p class="terms-text">
+                <div class="student-terms-section">
+                    <p class="student-terms-text">
                         "By signing in, you agree to our "
-                        <a href="#" class="terms-link">"Terms of Service"</a>
+                        <a href="#" class="student-terms-link">"Terms of Service"</a>
                         " and "
-                        <a href="#" class="terms-link">"Privacy Policy"</a>
+                        <a href="#" class="student-terms-link">"Privacy Policy"</a>
                     </p>
                 </div>
             </div>
