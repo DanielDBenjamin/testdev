@@ -169,22 +169,25 @@ pub fn Login() -> impl IntoView {
                             tabindex="0"
                             aria-label=move || if show_password.get() { "Hide password" } else { "Show password" }
                         >
-                            {move || if show_password.get() {
-                                view! {
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 2.06-2.94L17.94 17.94Z"/>
-                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
-                                        <line x1="1" y1="1" x2="23" y2="23"/>
-                                    </svg>
-                                }
-                            } else {
-                                view! {
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                                        <circle cx="12" cy="12" r="3"/>
-                                    </svg>
-                                }
-                            }}
+                            // Eye closed (hidden password)
+                            <svg 
+                                width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style=move || if show_password.get() { "opacity: 0; position: absolute;" } else { "opacity: 1;" }
+                            >
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            // Eye open with slash (visible password)
+                            <svg 
+                                width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style=move || if show_password.get() { "opacity: 1;" } else { "opacity: 0; position: absolute;" }
+                            >
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 2.06-2.94L17.94 17.94Z"/>
+                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
                         </span>
                     </div>
 
@@ -248,22 +251,25 @@ pub fn Login() -> impl IntoView {
                                     tabindex="0"
                                     aria-label=move || if show_new_password.get() { "Hide password" } else { "Show password" }
                                 >
-                                    {move || if show_new_password.get() {
-                                        view! {
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 2.06-2.94L17.94 17.94Z"/>
-                                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
-                                                <line x1="1" y1="1" x2="23" y2="23"/>
-                                            </svg>
-                                        }
-                                    } else {
-                                        view! {
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                                                <circle cx="12" cy="12" r="3"/>
-                                            </svg>
-                                        }
-                                    }}
+                                    // Eye closed (hidden password)
+                                    <svg 
+                                        width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        style=move || if show_new_password.get() { "opacity: 0; position: absolute;" } else { "opacity: 1;" }
+                                    >
+                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    // Eye open with slash (visible password)
+                                    <svg 
+                                        width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        style=move || if show_new_password.get() { "opacity: 1;" } else { "opacity: 0; position: absolute;" }
+                                    >
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 2.06-2.94L17.94 17.94Z"/>
+                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
+                                        <line x1="1" y1="1" x2="23" y2="23"/>
+                                    </svg>
                                 </span>
                             </div>
 
@@ -289,22 +295,25 @@ pub fn Login() -> impl IntoView {
                                     tabindex="0"
                                     aria-label=move || if show_confirm_password.get() { "Hide password" } else { "Show password" }
                                 >
-                                    {move || if show_confirm_password.get() {
-                                        view! {
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 2.06-2.94L17.94 17.94Z"/>
-                                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
-                                                <line x1="1" y1="1" x2="23" y2="23"/>
-                                            </svg>
-                                        }
-                                    } else {
-                                        view! {
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                                                <circle cx="12" cy="12" r="3"/>
-                                            </svg>
-                                        }
-                                    }}
+                                    // Eye closed (hidden password)
+                                    <svg 
+                                        width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        style=move || if show_confirm_password.get() { "opacity: 0; position: absolute;" } else { "opacity: 1;" }
+                                    >
+                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    // Eye open with slash (visible password)
+                                    <svg 
+                                        width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        style=move || if show_confirm_password.get() { "opacity: 1;" } else { "opacity: 0; position: absolute;" }
+                                    >
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 2.06-2.94L17.94 17.94Z"/>
+                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
+                                        <line x1="1" y1="1" x2="23" y2="23"/>
+                                    </svg>
                                 </span>
                             </div>
 

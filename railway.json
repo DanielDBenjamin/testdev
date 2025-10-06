@@ -1,0 +1,29 @@
+{
+  "name": "ClockIt - Student Attendance System",
+  "description": "A modern Rust web application for tracking student attendance with QR codes and analytics",
+  "repository": "https://github.com/DanielDBenjamin/testdev",
+  "services": [
+    {
+      "name": "web",
+      "source": {
+        "repo": "DanielDBenjamin/testdev",
+        "ref": "main"
+      },
+      "build": {
+        "buildCommand": "cargo leptos build --release",
+        "watchPatterns": ["src/**"]
+      },
+      "deploy": {
+        "startCommand": "./start.sh",
+        "healthcheckPath": "/",
+        "healthcheckTimeout": 100
+      },
+      "variables": {
+        "LEPTOS_SITE_ADDR": "0.0.0.0:${{ PORT }}",
+        "LEPTOS_SITE_ROOT": "target/site",
+        "DATABASE_URL": "sqlite:///app/data/clock_it.db",
+        "RUST_LOG": "info"
+      }
+    }
+  ]
+}

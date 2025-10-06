@@ -44,7 +44,6 @@ RUN mkdir -p /app/data
 EXPOSE 3000
 
 # Set environment variables
-ENV LEPTOS_SITE_ADDR="0.0.0.0:3000"
 ENV LEPTOS_SITE_ROOT="target/site"
 ENV DATABASE_URL="sqlite:///app/data/clock_it.db"
 

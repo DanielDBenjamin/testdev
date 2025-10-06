@@ -3,9 +3,22 @@
     <img src="https://raw.githubusercontent.com/leptos-rs/leptos/main/docs/logos/Leptos_logo_RGB.svg" alt="Leptos Logo">
 </picture>
 
-# Leptos Axum Starter Template
+# ClockIt - Student Attendance Tracking System
 
-This is a template for use with the [Leptos](https://github.com/leptos-rs/leptos) web framework and the [cargo-leptos](https://github.com/akesson/cargo-leptos) tool using [Axum](https://github.com/tokio-rs/axum).
+A modern web application built with Rust, Leptos, and Axum for tracking student attendance with QR code scanning, geolocation verification, and comprehensive analytics.
+
+## 🚀 Quick Deploy
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/Abo1zu?referralCode=alphasec)
+
+## ✨ Features
+
+- **QR Code Attendance**: Students scan QR codes to check in/out
+- **Geolocation Verification**: Location-based attendance validation
+- **Real-time Analytics**: Comprehensive attendance statistics
+- **Role-based Access**: Separate interfaces for students and lecturers
+- **Mobile-first Design**: Responsive UI optimized for mobile devices
+- **Secure Authentication**: User management with password reset functionality
 
 ## Creating your template repo
 

@@ -108,6 +108,23 @@ fn resolve_port(use_tls: bool) -> u16 {
 
     let default_port = if use_tls { 3443 } else { 3000 };
 
+    // Check Railway's PORT environment variable first
+    if let Ok(raw) = env::var("PORT") {
+        let trimmed = raw.trim();
+        if !trimmed.is_empty() {
+            match trimmed.parse::<u16>() {
+                Ok(port) if port != 0 => return port,
+                _ => {
+                    log!(
+                        "⚠️  Invalid PORT '{}'; checking CLOCK_IT_PORT instead.",
+                        raw
+                    );
+                }
+            }
+        }
+    }
+
+    // Fall back to CLOCK_IT_PORT
     if let Ok(raw) = env::var("CLOCK_IT_PORT") {
         let trimmed = raw.trim();
         if trimmed.is_empty() {
