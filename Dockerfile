@@ -7,8 +7,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install
 # Install wasm32 target for frontend compilation
 RUN rustup target add wasm32-unknown-unknown
 
-# Install a stable version of cargo-leptos that works with stable Rust
-RUN cargo install cargo-leptos --version 0.2.21
+# Install an older stable version of cargo-leptos that definitely works with stable Rust
+RUN cargo install cargo-leptos --version 0.2.9
 
 # Set the working directory in the container
 WORKDIR /app
