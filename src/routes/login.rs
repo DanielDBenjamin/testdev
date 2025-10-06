@@ -29,6 +29,26 @@ pub fn Login() -> impl IntoView {
     let login_action = ServerAction::<LoginUser>::new();
     let reset_action = ServerAction::<ResetPassword>::new();
 
+    // Client-side validation for password reset
+    let reset_password_valid = Signal::derive(move || {
+        let new_pass = reset_new_password.get();
+        let confirm_pass = reset_confirm_password.get();
+        
+        if new_pass.is_empty() || confirm_pass.is_empty() {
+            return (false, String::new());
+        }
+        
+        if new_pass.len() < 6 {
+            return (false, "Password must be at least 6 characters".to_string());
+        }
+        
+        if new_pass != confirm_pass {
+            return (false, "Passwords do not match".to_string());
+        }
+        
+        (true, String::new())
+    });
+
     Effect::new({
         let message = message.clone();
         let success = success.clone();
@@ -117,6 +137,8 @@ pub fn Login() -> impl IntoView {
                             name="email"
                             placeholder="jane.gerber@university.edu"
                             bind:value=email
+                            required
+                            autocomplete="email"
                         />
                         <span class="input-icon" aria-hidden="true">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" opacity="0"></path><path d="M4 8l8 6 8-6"/><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
@@ -131,10 +153,18 @@ pub fn Login() -> impl IntoView {
                             name="password"
                             placeholder="••••••••"
                             bind:value=password
+                            required
+                            autocomplete="current-password"
                         />
                         <span 
                             class="input-icon password-toggle" 
                             on:click=move |_| show_password.set(!show_password.get())
+                            on:keydown=move |ev: leptos::ev::KeyboardEvent| {
+                                if ev.key() == "Enter" || ev.key() == " " {
+                                    ev.prevent_default();
+                                    show_password.set(!show_password.get());
+                                }
+                            }
                             role="button"
                             tabindex="0"
                             aria-label=move || if show_password.get() { "Hide password" } else { "Show password" }
@@ -146,14 +176,14 @@ pub fn Login() -> impl IntoView {
                                         <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
                                         <line x1="1" y1="1" x2="23" y2="23"/>
                                     </svg>
-                                }.into_view()
+                                }
                             } else {
                                 view! {
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
                                         <circle cx="12" cy="12" r="3"/>
                                     </svg>
-                                }.into_view()
+                                }
                             }}
                         </span>
                     </div>
@@ -161,7 +191,11 @@ pub fn Login() -> impl IntoView {
                     <button
                         class="btn btn-accent btn-block"
                         type="submit"
-                        disabled=move || login_action.pending().get()
+                        disabled=move || {
+                            login_action.pending().get() || 
+                            email.get().trim().is_empty() || 
+                            password.get().trim().is_empty()
+                        }
                     >
                         {move || if login_action.pending().get() {
                             "Signing in...".into_view()
@@ -204,6 +238,12 @@ pub fn Login() -> impl IntoView {
                                 <span 
                                     class="input-icon password-toggle" 
                                     on:click=move |_| show_new_password.set(!show_new_password.get())
+                                    on:keydown=move |ev: leptos::ev::KeyboardEvent| {
+                                        if ev.key() == "Enter" || ev.key() == " " {
+                                            ev.prevent_default();
+                                            show_new_password.set(!show_new_password.get());
+                                        }
+                                    }
                                     role="button"
                                     tabindex="0"
                                     aria-label=move || if show_new_password.get() { "Hide password" } else { "Show password" }
@@ -215,14 +255,14 @@ pub fn Login() -> impl IntoView {
                                                 <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
                                                 <line x1="1" y1="1" x2="23" y2="23"/>
                                             </svg>
-                                        }.into_view()
+                                        }
                                     } else {
                                         view! {
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
                                                 <circle cx="12" cy="12" r="3"/>
                                             </svg>
-                                        }.into_view()
+                                        }
                                     }}
                                 </span>
                             </div>
@@ -239,6 +279,12 @@ pub fn Login() -> impl IntoView {
                                 <span 
                                     class="input-icon password-toggle" 
                                     on:click=move |_| show_confirm_password.set(!show_confirm_password.get())
+                                    on:keydown=move |ev: leptos::ev::KeyboardEvent| {
+                                        if ev.key() == "Enter" || ev.key() == " " {
+                                            ev.prevent_default();
+                                            show_confirm_password.set(!show_confirm_password.get());
+                                        }
+                                    }
                                     role="button"
                                     tabindex="0"
                                     aria-label=move || if show_confirm_password.get() { "Hide password" } else { "Show password" }
@@ -250,19 +296,37 @@ pub fn Login() -> impl IntoView {
                                                 <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
                                                 <line x1="1" y1="1" x2="23" y2="23"/>
                                             </svg>
-                                        }.into_view()
+                                        }
                                     } else {
                                         view! {
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
                                                 <circle cx="12" cy="12" r="3"/>
                                             </svg>
-                                        }.into_view()
+                                        }
                                     }}
                                 </span>
                             </div>
 
-                            <button class="btn btn-outline btn-block" type="submit" disabled=move || reset_action.pending().get()>
+                            // Client-side validation feedback
+                            <Show when=move || {
+                                let (valid, msg) = reset_password_valid.get();
+                                !msg.is_empty() && !valid
+                            }>
+                                <p class="error center" style="margin: 8px 0;">
+                                    {move || reset_password_valid.get().1}
+                                </p>
+                            </Show>
+
+                            <button 
+                                class="btn btn-outline btn-block" 
+                                type="submit" 
+                                disabled=move || {
+                                    reset_action.pending().get() || 
+                                    reset_email.get().trim().is_empty() ||
+                                    !reset_password_valid.get().0
+                                }
+                            >
                                 {move || if reset_action.pending().get() { "Updating..." } else { "Reset Password" }}
                             </button>
 
