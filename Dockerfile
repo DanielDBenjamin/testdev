@@ -62,6 +62,7 @@ EXPOSE 3000
 # Set environment variables
 ENV LEPTOS_SITE_ROOT="target/site"
 ENV DATABASE_URL="sqlite:///app/data/clock_it.db"
+ENV CLOCK_IT_USE_TLS="false"
 
 # Make the binary executable
 RUN chmod +x /app/clock-it
