@@ -1,5 +1,5 @@
 [build]
-rustflags = ["-C", "symbol-mangling-version=v0"]
+rustflags = ["-C", "symbol-mangling-version=v0", "-C", "target-feature=+bulk-memory"]
 
 [profile.release]
 strip = "symbols"
