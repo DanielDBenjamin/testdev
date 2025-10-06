@@ -3,8 +3,7 @@ use crate::pages::{
     RolePage, StudentEditProfilePage, StudentHomePage, StudentLoginPage, StudentProfilePage,
     StudentStatisticsPage,
 };
-use crate::routes::{
-    About, ClassQrFullscreenPage, ClassQrPage, ClassesPage, EditClass, EditModule, Error, HomePage,
+use crate::routes::{ ClassQrFullscreenPage, ClassQrPage, ClassesPage, EditClass, EditModule, Error, HomePage,
     Login, NewClass, NewModule, Profile, Register, Statistics, Timetable,
 };
 use leptos::prelude::*;
@@ -103,7 +102,6 @@ fn AppShell() -> impl IntoView {
                     <Route path=(StaticSegment("modules"), StaticSegment("edit")) view=EditModule/>
                     <Route path=StaticSegment("timetable") view=Timetable/>
                     <Route path=StaticSegment("statistics") view=Statistics/>
-                    <Route path=StaticSegment("about") view=About/>
                     <Route path=(StaticSegment("lecturer"), StaticSegment("profile")) view=Profile/>
                     <Route path=(StaticSegment("classes"), StaticSegment("edit")) view=EditClass/>
                     <Route path=(StaticSegment("classes"), StaticSegment("qr")) view=ClassQrPage/>
