@@ -1,5 +1,5 @@
-# Use Rust nightly to support edition2024 dependencies
-FROM rustlang/rust:nightly as builder
+# Use stable Rust with optimized build process
+FROM rust:1.82 as dependencies
 
 # Install Node.js for Leptos frontend build
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
@@ -7,18 +7,30 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install
 # Install wasm32 target for frontend compilation
 RUN rustup target add wasm32-unknown-unknown
 
-# Install cargo-leptos on nightly (should work with edition2024)
-RUN cargo install cargo-leptos
-
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Copy the Cargo.toml and Cargo.lock files
-COPY Cargo.toml ./
-COPY Cargo.lock ./
+# Copy only dependency files first for better caching
+COPY Cargo.toml Cargo.lock ./
 
-# Copy the source code
+# Create a dummy main.rs to build dependencies
+RUN mkdir src && echo 'fn main() {}' > src/main.rs
+
+# Build dependencies only (this gets cached)
+RUN cargo build --release --target wasm32-unknown-unknown
+RUN cargo build --release
+
+# Stage 2: Build the actual application
+FROM dependencies as builder
+
+# Install a simple version of cargo-leptos
+RUN cargo install cargo-leptos --version 0.2.9
+
+# Copy the actual source code
 COPY . .
+
+# Touch main.rs to ensure rebuild
+RUN touch src/main.rs
 
 # Build the application with cargo-leptos (should work on nightly)
 RUN cargo leptos build --release
