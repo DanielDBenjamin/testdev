@@ -1,17 +1,18 @@
-# Use the official Rust image as a parent image
-FROM rust:1.75 as builder
+# Use the latest official Rust image as a parent image
+FROM rust:1.82 as builder
 
 # Install Node.js for Leptos frontend build
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
 
-# Install cargo-leptos
-RUN cargo install cargo-leptos
+# Install cargo-leptos with compatible version
+RUN cargo install cargo-leptos --version 0.2.28
 
 # Set the working directory in the container
 WORKDIR /app
 
 # Copy the Cargo.toml and Cargo.lock files
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
+COPY Cargo.lock ./
 
 # Copy the source code
 COPY . .
