@@ -13,12 +13,12 @@ WORKDIR /app
 # Copy only dependency files first for better caching
 COPY Cargo.toml Cargo.lock ./
 
-# Create a dummy main.rs to build dependencies
-RUN mkdir src && echo 'fn main() {}' > src/main.rs
+# Create dummy source files to build dependencies
+RUN mkdir src && echo 'pub fn dummy() {}' > src/lib.rs && echo 'fn main() {}' > src/main.rs
 
 # Build dependencies only (this gets cached)
-RUN cargo build --release --target wasm32-unknown-unknown
-RUN cargo build --release
+RUN cargo build --release --target wasm32-unknown-unknown --lib
+RUN cargo build --release --bin clock-it
 
 # Stage 2: Build the actual application
 FROM dependencies as builder
