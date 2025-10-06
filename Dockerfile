@@ -1,5 +1,5 @@
-# Use stable Rust with optimized build process
-FROM rust:1.82 as dependencies
+# Use nightly Rust since Leptos 0.8.x requires future Rust versions
+FROM rustlang/rust:nightly as dependencies
 
 # Install Node.js for Leptos frontend build
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
@@ -16,7 +16,8 @@ COPY Cargo.toml Cargo.lock ./
 # Create dummy source files to build dependencies
 RUN mkdir src && echo 'pub fn dummy() {}' > src/lib.rs && echo 'fn main() {}' > src/main.rs
 
-# Build dependencies only (this gets cached)
+# Update Cargo.lock to prevent version drift, then build dependencies
+RUN cargo update
 RUN cargo build --release --target wasm32-unknown-unknown --lib
 RUN cargo build --release --bin clock-it
 
