@@ -63,8 +63,8 @@ EXPOSE 3000
 ENV LEPTOS_SITE_ROOT="target/site"
 ENV DATABASE_URL="sqlite:///app/data/clock_it.db"
 
-# Make startup script executable
-RUN chmod +x /app/start.sh
+# Make the binary executable
+RUN chmod +x /app/clock-it
 
-# Run the application
-CMD ["./start.sh"]
+# Run the application directly
+CMD ["./clock-it"]
