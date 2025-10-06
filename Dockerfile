@@ -1,11 +1,14 @@
-# Use stable Rust version
-FROM rust:1.80 as builder
+# Use stable Rust version with good compatibility  
+FROM rust:1.81 as builder
 
 # Install Node.js for Leptos frontend build
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
 
-# Install a stable version of cargo-leptos that works with older dependencies
-RUN cargo install cargo-leptos --version 0.2.17
+# Install wasm32 target for frontend compilation
+RUN rustup target add wasm32-unknown-unknown
+
+# Install a working version of cargo-leptos that doesn't have dependency conflicts
+RUN cargo install --git https://github.com/leptos-rs/cargo-leptos.git --tag v0.2.17 cargo-leptos
 
 # Set the working directory in the container
 WORKDIR /app
