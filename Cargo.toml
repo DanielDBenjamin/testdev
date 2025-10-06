@@ -1,0 +1,110 @@
+[package]
+name = "clock-it"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+leptos = { version = "0.8.0" }
+leptos_router = { version = "0.8.0" }
+leptos_meta = { version = "0.8.0" }
+console_error_panic_hook = { version = "0.1", optional = true }
+wasm-bindgen = { version = "=0.2.103", optional = true }
+
+# Always available dependencies
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde", "wasm-bindgen"] }
+gloo-net = "0.6.0"
+qrcode = "0.12"
+urlencoding = "2.1"
+futures = "0.3"
+
+# Web/WASM dependencies
+web-sys = { version = "0.3", features = [
+    "Window", 
+    "Storage",
+    "Navigator",
+    "Geolocation",
+    "Position",
+    "Coordinates",
+    "PositionError",
+    "PositionOptions",
+    "MediaDevices",
+    "MediaStream",
+    "MediaStreamConstraints",
+    "MediaStreamTrack",
+    "HtmlVideoElement",
+    "HtmlCanvasElement",
+    "CanvasRenderingContext2d",
+    "ImageData",
+] }
+gloo = { version = "0.11", features = ["timers"] }
+gloo-timers = { version = "0.3", features = ["futures"] }
+wasm-bindgen-futures = { version = "0.4", optional = true }
+js-sys = { version = "0.3", optional = true }
+rqrr = { version = "0.7", optional = true }
+
+# Server-only dependencies
+axum = { version = "0.8.0", optional = true }
+leptos_axum = { version = "0.8.0", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid", "macros"], optional = true }
+uuid = { version = "1.0", features = ["v4", "serde"], optional = true }
+axum_session = { version = "0.16", optional = true }
+axum-server = { version = "0.6", features = ["tls-rustls"], optional = true }
+
+
+# TLS dependencies - ONLY for SSR
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+tokio-rustls = "0.24"
+rustls-pemfile = "1.0"
+
+[features]
+hydrate = [
+    "leptos/hydrate",
+    "dep:console_error_panic_hook",
+    "dep:wasm-bindgen",
+    "dep:wasm-bindgen-futures",
+    "dep:js-sys",
+    "dep:rqrr",
+]
+ssr = [
+    "dep:axum",
+    "dep:tokio",
+    "dep:leptos_axum",
+    "dep:sqlx",
+    "dep:uuid",
+    "dep:axum-server",
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+]
+
+# Defines a size-optimized profile for the WASM bundle in release mode
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[package.metadata.leptos]
+output-name = "clock-it"
+site-root = "target/site"
+site-pkg-dir = "pkg"
+style-file = "style/main.scss"
+assets-dir = "public"
+site-addr = "0.0.0.0:3000"  # Changed to listen on all interfaces
+reload-port = 3001
+end2end-cmd = "npx playwright test"
+end2end-dir = "end2end"
+browserquery = "defaults"
+env = "DEV"
+bin-features = ["ssr"]
+bin-default-features = false
+lib-features = ["hydrate"]
+lib-default-features = false
+lib-profile-release = "wasm-release"
