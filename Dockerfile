@@ -1,4 +1,4 @@
-# Use stable Rust version with good compatibility  
+# Use stable Rust version
 FROM rust:1.81 as builder
 
 # Install Node.js for Leptos frontend build
@@ -7,8 +7,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install
 # Install wasm32 target for frontend compilation
 RUN rustup target add wasm32-unknown-unknown
 
-# Install cargo-leptos version that's compatible with Rust 1.81
-RUN cargo install cargo-leptos --version 0.2.28
+# Instead of installing cargo-leptos, we'll build directly with cargo
+# This avoids the cargo-leptos dependency conflicts entirely
 
 # Set the working directory in the container
 WORKDIR /app
@@ -20,8 +20,20 @@ COPY Cargo.lock ./
 # Copy the source code
 COPY . .
 
-# Build the application with cargo-leptos
-RUN cargo leptos build --release
+# Build the WASM frontend first
+RUN cargo build --target wasm32-unknown-unknown --no-default-features --features=hydrate --release
+
+# Install wasm-bindgen-cli for WASM processing  
+RUN cargo install wasm-bindgen-cli --version 0.2.95
+
+# Create target directories
+RUN mkdir -p target/site/pkg
+
+# Process the WASM file (the lib will be named clock_it.wasm)
+RUN wasm-bindgen --out-dir target/site/pkg --target web --no-typescript target/wasm32-unknown-unknown/release/clock_it.wasm
+
+# Build the server
+RUN cargo build --release --no-default-features --features=ssr
 
 # Use a smaller base image for the final stage
 FROM debian:bookworm-slim
@@ -39,7 +51,6 @@ WORKDIR /app
 COPY --from=builder /app/target/release/clock-it /app/clock-it
 COPY --from=builder /app/target/site /app/target/site
 COPY --from=builder /app/public /app/public
-COPY --from=builder /app/start.sh /app/start.sh
 
 # Create directory for SQLite database
 RUN mkdir -p /app/data
