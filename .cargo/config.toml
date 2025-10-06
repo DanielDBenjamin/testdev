@@ -1,0 +1,11 @@
+[build]
+rustflags = ["-C", "symbol-mangling-version=v0"]
+
+[profile.release]
+strip = "symbols"
+opt-level = "z"
+lto = true
+codegen-units = 1
+
+[profile.wasm-release]
+inherits = "release"
