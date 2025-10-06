@@ -1,0 +1,12 @@
+target/
+node_modules/
+.git/
+.DS_Store
+*.db
+*.db-shm
+*.db-wal
+certs/
+.env
+.env.local
+README.md
+localhost.png

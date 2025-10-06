@@ -1,0 +1,15 @@
+$schema: https://railway.app/railway.schema.json
+version: 2
+
+environments:
+  production:
+    variables:
+      LEPTOS_SITE_ADDR: "0.0.0.0:${{ PORT }}"
+      LEPTOS_SITE_ROOT: "target/site" 
+      DATABASE_URL: "sqlite:///app/data/clock_it.db"
+      RUST_LOG: "info"
+      
+deploy:
+  startCommand: "./clock-it"
+  healthcheckPath: "/"
+  healthcheckTimeout: 100
