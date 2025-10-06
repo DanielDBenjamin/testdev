@@ -1,8 +1,9 @@
 # Use nightly Rust since Leptos 0.8.x requires future Rust versions
 FROM rustlang/rust:nightly as dependencies
 
-# Install Node.js for Leptos frontend build
+# Install Node.js for Leptos frontend build and SASS for CSS compilation
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
+RUN npm install -g sass
 
 # Install wasm32 target for frontend compilation
 RUN rustup target add wasm32-unknown-unknown
@@ -52,6 +53,7 @@ WORKDIR /app
 COPY --from=builder /app/target/release/clock-it /app/clock-it
 COPY --from=builder /app/target/site /app/target/site
 COPY --from=builder /app/public /app/public
+COPY --from=builder /app/style /app/style
 
 # Create directory for SQLite database
 RUN mkdir -p /app/data
