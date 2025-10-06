@@ -62,12 +62,14 @@ RUN mkdir -p /app/data
 EXPOSE 3000
 
 # Set environment variables
-ENV LEPTOS_SITE_ROOT="target/site"
+ENV LEPTOS_SITE_ROOT="/app/target/site"
+ENV LEPTOS_SITE_PKG_DIR="pkg" 
 ENV DATABASE_URL="sqlite:///app/data/clock_it.db"
 ENV CLOCK_IT_USE_TLS="false"
 
 # Make the binary executable
 RUN chmod +x /app/clock-it
 
-# Run the application directly
+# Ensure proper working directory and run the application
+WORKDIR /app
 CMD ["./clock-it"]
