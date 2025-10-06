@@ -233,68 +233,10 @@ pub fn StudentProfilePage() -> impl IntoView {
                     </button>
                 </section>
 
-                {/* Quick Actions */}
-                <section class="student-profile-section">
-                    <h3 class="student-section-title">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                        </svg>
-                        "Quick Actions"
-                    </h3>
-
-                    <div class="student-quick-actions-grid">
-                        <button class="student-quick-action-btn student-quick-action-purple">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            <span class="student-quick-action-label">"Download ID"</span>
-                        </button>
-
-                        <button class="student-quick-action-btn student-quick-action-green">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 2L11 13"></path>
-                                <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
-                            </svg>
-                            <span class="student-quick-action-label">"Share Profile"</span>
-                        </button>
-
-                        <button class="student-quick-action-btn student-quick-action-orange">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                            </svg>
-                            <span class="student-quick-action-label">"Import Timetable"</span>
-                        </button>
-
-                        <button class="student-quick-action-btn student-quick-action-gray">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M12 16v-4"></path>
-                                <path d="M12 8h.01"></path>
-                            </svg>
-                            <span class="student-quick-action-label">"Help"</span>
-                        </button>
-                    </div>
-                </section>
+                
 
                 {/* Other Options */}
                 <section class="student-profile-section">
-                    <button class="student-settings-item">
-                        <div class="student-settings-icon student-settings-icon-gray">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                            </svg>
-                        </div>
-                        <div class="student-settings-text">
-                            <div class="student-settings-label">"Privacy Settings"</div>
-                        </div>
-                        <svg class="student-settings-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 18l6-6-6-6"></path>
-                        </svg>
-                    </button>
-
                     <button class="student-settings-item">
                         <div class="student-settings-icon student-settings-icon-gray">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

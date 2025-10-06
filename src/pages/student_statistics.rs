@@ -174,20 +174,6 @@ pub fn StudentStatisticsPage() -> impl IntoView {
                                         <div class="student-stat-value">{format!("{:.0}%", stats.weekly_attendance_rate)}</div>
                                         <div class="student-stat-change">{weekly_sessions_text}</div>
                                     </div>
-
-                                    <div class="student-stat-card">
-                                        <div class="student-stat-card-header">
-                                            <span class="student-stat-label">"Upcoming"</span>
-                                            <div class="student-stat-icon student-stat-icon-purple">
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M12 8v4l3 3"></path>
-                                                    <circle cx="12" cy="12" r="9"></circle>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                        <div class="student-stat-value">{stats.upcoming_classes.to_string()}</div>
-                                        <div class="student-stat-change">"Upcoming classes"</div>
-                                    </div>
                                 </div>
                             }
                             .into_any()
