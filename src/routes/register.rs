@@ -221,17 +221,22 @@ pub fn Register() -> impl IntoView {
                         </span>
                     </div>
 
-                    <button
-                        class="btn btn-accent btn-block"
-                        on:click=on_submit
-                        disabled=move || register_action.pending().get()
-                    >
-                        {move || if register_action.pending().get() {
-                            "Creating Account...".into_view()
-                        } else {
-                            "Create Account".into_view()
-                        }}
-                    </button>
+                    <div style="display: flex; justify-content: center;">
+                        <button
+                            class="btn btn-accent"
+                            on:click=on_submit
+                            disabled=move || register_action.pending().get()
+                            style="min-width: 200px; justify-content: center;"
+                        >
+                            <span style="opacity: 1;">
+                                {move || if register_action.pending().get() {
+                                    "Creating Account..."
+                                } else {
+                                    "Create Account"
+                                }}
+                            </span>
+                        </button>
+                    </div>
 
                     <div style="margin-top: 12px; margin-bottom: 12px;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
