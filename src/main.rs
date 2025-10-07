@@ -175,7 +175,7 @@ async fn main() {
 
     clock_it::database::print_test_hash();
 
-    let conf = get_configuration(None).unwrap();
+    let conf = get_configuration(Some("Cargo.toml")).unwrap();
     let leptos_options = conf.leptos_options;
 
     // Initialize database
