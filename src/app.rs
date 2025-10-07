@@ -1,7 +1,7 @@
 use crate::components::{NavBar, TopBar};
 use crate::pages::{
     RolePage, StudentEditProfilePage, StudentHomePage, StudentLoginPage, StudentProfilePage,
-    StudentStatisticsPage,
+    StudentStatisticsPage, Support, TermsAndConditions,
 };
 use crate::routes::{ ClassQrFullscreenPage, ClassQrPage, ClassesPage, EditClass, EditModule, Error, HomePage,
     Login, NewClass, NewModule, Profile, Register, Statistics, Timetable,
@@ -95,6 +95,7 @@ fn AppShell() -> impl IntoView {
                 <Routes fallback=|| view! { <Error/> }>
                     <Route path=StaticSegment("") view=Login/>
                     <Route path=StaticSegment("register") view=Register/>
+                    <Route path=StaticSegment("terms") view=TermsAndConditions/>
                     <Route path=StaticSegment("home") view=HomePage/>
                     <Route path=StaticSegment("classes") view=ClassesPage/>
                     <Route path=(StaticSegment("classes"), StaticSegment("new")) view=NewClass/>
@@ -113,6 +114,7 @@ fn AppShell() -> impl IntoView {
                     <Route path=(StaticSegment("student"), StaticSegment("profile")) view=StudentProfilePage/>
                     <Route path=(StaticSegment("student"), StaticSegment("profile"), StaticSegment("edit")) view=StudentEditProfilePage/>
                     <Route path=(StaticSegment("student"), StaticSegment("statistics")) view=StudentStatisticsPage/>
+                    <Route path=(StaticSegment("student"), StaticSegment("support")) view=Support/>
                 </Routes>
             </main>
             <Show when=move || show_footer.get()>

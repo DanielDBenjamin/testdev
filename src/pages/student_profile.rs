@@ -3,6 +3,7 @@ use crate::routes::auth_functions::ResetPassword;
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
 use urlencoding::encode;
+use leptos_router::components::A;
 
 fn format_role(role: &str) -> String {
     match role {
@@ -308,6 +309,27 @@ pub fn StudentProfilePage() -> impl IntoView {
                     </button>
 
                     <button class="student-settings-item">
+                        <div class="student-settings-icon student-settings-icon-blue">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                        </div>
+                        <div class="student-settings-text">
+                            <div class="student-settings-label">"Notification Preferences"</div>
+                            <div class="student-settings-desc">"Manage your notification settings"</div>
+                        </div>
+                        <svg class="student-settings-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6"></path>
+                        </svg>
+                    </button>
+                </section>
+
+                
+
+                {/* Other Options */}
+                <section class="student-profile-section">
+                    <A href="/student/support" attr:class="student-settings-item">
                         <div class="student-settings-icon student-settings-icon-gray">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -321,7 +343,7 @@ pub fn StudentProfilePage() -> impl IntoView {
                         <svg class="student-settings-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 18l6-6-6-6"></path>
                         </svg>
-                    </button>
+                    </A>
 
                     <button class="student-settings-item student-settings-item-danger" on:click=handle_sign_out>
                         <div class="student-settings-icon student-settings-icon-red">
@@ -339,8 +361,6 @@ pub fn StudentProfilePage() -> impl IntoView {
                         </svg>
                     </button>
                 </section>
-
-
             </div>
 
             {/* Reset Password Modal */}
