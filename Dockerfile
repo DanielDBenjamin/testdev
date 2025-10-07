@@ -28,6 +28,10 @@ WORKDIR /app
 # Copy built artifacts
 COPY --from=builder /app/clock-it /app/clock-it
 COPY --from=builder /app/target/site /app/target/site
+COPY --from=builder /app/start.sh /app/start.sh
+
+# Make executable
+RUN chmod +x /app/clock-it /app/start.sh
 
 # Create directory for SQLite database
 RUN mkdir -p /app/data
@@ -36,4 +40,4 @@ RUN mkdir -p /app/data
 EXPOSE 3000
 
 # Start the application
-CMD ["./clock-it"]
+CMD ["./start.sh"]
