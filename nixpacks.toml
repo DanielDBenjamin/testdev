@@ -1,8 +1,17 @@
 [phases.setup]
-nixPkgs = ["binaryen"]
+nixPkgs = ["binaryen", "rustup"]
+
+[phases.install]
+cmds = [
+    "rustup default stable",
+    "rustup target add wasm32-unknown-unknown"
+]
 
 [phases.build]
-cmds = ["./build.sh"]
+cmds = [
+    "chmod +x build.sh",
+    "./build.sh"
+]
 
 [start]
 cmd = "./start.sh"

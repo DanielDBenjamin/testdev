@@ -22,6 +22,9 @@ wasm-opt --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ex
     target/site/pkg/clock-it_bg.wasm \
     -o target/site/pkg/clock-it_bg.wasm
 
+echo "Copying backend binary..."
+cp target/release/clock-it ./clock-it
+
 echo "Copying assets..."
 mkdir -p target/site
 cp -r style target/site/ 2>/dev/null || true
