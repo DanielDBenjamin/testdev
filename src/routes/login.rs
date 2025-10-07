@@ -19,6 +19,11 @@ pub fn Login() -> impl IntoView {
     let reset_message = RwSignal::new(String::new());
     let reset_success = RwSignal::new(false);
 
+    // Password visibility state
+    let show_password = RwSignal::new(false);
+    let show_new_password = RwSignal::new(false);
+    let show_confirm_password = RwSignal::new(false);
+
     let navigate = use_navigate();
 
     let login_action = ServerAction::<LoginUser>::new();
@@ -122,13 +127,34 @@ pub fn Login() -> impl IntoView {
                     <div class="input-group">
                         <input
                             class="input"
-                            type="password"
+                            type=move || if show_password.get() { "text" } else { "password" }
                             name="password"
                             placeholder="••••••••"
                             bind:value=password
                         />
-                        <span class="input-icon" aria-hidden="true">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span 
+                            class="input-icon password-toggle" 
+                            on:click=move |_| show_password.set(!show_password.get())
+                            role="button"
+                            tabindex="0"
+                            aria-label=move || if show_password.get() { "Hide password" } else { "Show password" }
+                        >
+                            {move || if show_password.get() {
+                                view! {
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 2.06-2.94L17.94 17.94Z"/>
+                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
+                                        <line x1="1" y1="1" x2="23" y2="23"/>
+                                    </svg>
+                                }.into_view()
+                            } else {
+                                view! {
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                }.into_view()
+                            }}
                         </span>
                     </div>
 
@@ -167,22 +193,74 @@ pub fn Login() -> impl IntoView {
                             />
 
                             <label class="label">"New Password"</label>
-                            <input
-                                class="input"
-                                type="password"
-                                name="new_password"
-                                placeholder="••••••••"
-                                bind:value=reset_new_password
-                            />
+                            <div class="input-group">
+                                <input
+                                    class="input"
+                                    type=move || if show_new_password.get() { "text" } else { "password" }
+                                    name="new_password"
+                                    placeholder="••••••••"
+                                    bind:value=reset_new_password
+                                />
+                                <span 
+                                    class="input-icon password-toggle" 
+                                    on:click=move |_| show_new_password.set(!show_new_password.get())
+                                    role="button"
+                                    tabindex="0"
+                                    aria-label=move || if show_new_password.get() { "Hide password" } else { "Show password" }
+                                >
+                                    {move || if show_new_password.get() {
+                                        view! {
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 2.06-2.94L17.94 17.94Z"/>
+                                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
+                                                <line x1="1" y1="1" x2="23" y2="23"/>
+                                            </svg>
+                                        }.into_view()
+                                    } else {
+                                        view! {
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                                                <circle cx="12" cy="12" r="3"/>
+                                            </svg>
+                                        }.into_view()
+                                    }}
+                                </span>
+                            </div>
 
                             <label class="label">"Confirm Password"</label>
-                            <input
-                                class="input"
-                                type="password"
-                                name="confirm_password"
-                                placeholder="••••••••"
-                                bind:value=reset_confirm_password
-                            />
+                            <div class="input-group">
+                                <input
+                                    class="input"
+                                    type=move || if show_confirm_password.get() { "text" } else { "password" }
+                                    name="confirm_password"
+                                    placeholder="••••••••"
+                                    bind:value=reset_confirm_password
+                                />
+                                <span 
+                                    class="input-icon password-toggle" 
+                                    on:click=move |_| show_confirm_password.set(!show_confirm_password.get())
+                                    role="button"
+                                    tabindex="0"
+                                    aria-label=move || if show_confirm_password.get() { "Hide password" } else { "Show password" }
+                                >
+                                    {move || if show_confirm_password.get() {
+                                        view! {
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 2.06-2.94L17.94 17.94Z"/>
+                                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12a18.5 18.5 0 0 1-2.16 3.19L9.9 4.24Z"/>
+                                                <line x1="1" y1="1" x2="23" y2="23"/>
+                                            </svg>
+                                        }.into_view()
+                                    } else {
+                                        view! {
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                                                <circle cx="12" cy="12" r="3"/>
+                                            </svg>
+                                        }.into_view()
+                                    }}
+                                </span>
+                            </div>
 
                             <button class="btn btn-outline btn-block" type="submit" disabled=move || reset_action.pending().get()>
                                 {move || if reset_action.pending().get() { "Updating..." } else { "Reset Password" }}

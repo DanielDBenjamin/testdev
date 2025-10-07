@@ -240,6 +240,10 @@ pub fn StudentEditProfilePage() -> impl IntoView {
                     </div>
 
                     {/* Account Type Input */}
+                    {/* Password Input */}
+                    
+
+                    {/* University Input */}
                     <div class="student-edit-input-group">
                         <div class="student-edit-input-icon student-edit-icon-teal">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
