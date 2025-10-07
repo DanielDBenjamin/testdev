@@ -1,7 +1,8 @@
 FROM rustlang/rust:nightly as builder
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y binaryen && rm -rf /var/lib/apt/lists/*
+# Install system dependencies including sass
+RUN apt-get update && apt-get install -y binaryen npm && rm -rf /var/lib/apt/lists/*
+RUN npm install -g sass
 RUN rustup target add wasm32-unknown-unknown
 
 # Install wasm-bindgen-cli

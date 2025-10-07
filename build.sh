@@ -22,12 +22,20 @@ wasm-opt --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ex
     target/site/pkg/clock-it_bg.wasm \
     -o target/site/pkg/clock-it_bg.wasm
 
+echo "Compiling SCSS to CSS..."
+mkdir -p target/site/pkg
+sass style/main.scss target/site/pkg/clock-it.css
+
 echo "Copying backend binary..."
 cp target/release/clock-it ./clock-it
 
-echo "Copying assets..."
-mkdir -p target/site
-cp -r style target/site/ 2>/dev/null || true
-cp -r public target/site/ 2>/dev/null || true
+echo "Copying public assets..."
+if [ -d "public" ]; then
+    echo "Copying public directory..."
+    cp -r public/* target/site/ 2>/dev/null || true
+fi
+
+echo "Final pkg directory contents:"
+ls -la target/site/pkg/
 
 echo "✅ Build complete!"
