@@ -12,6 +12,7 @@ pub fn Profile() -> impl IntoView {
     let name = RwSignal::new(String::new());
     let surname = RwSignal::new(String::new());
     let email = RwSignal::new(String::new());
+    let university = RwSignal::new(String::new());
     let message = RwSignal::new(String::new());
     let success = RwSignal::new(false);
 
@@ -27,6 +28,7 @@ pub fn Profile() -> impl IntoView {
             name.set(user.name.clone());
             surname.set(user.surname.clone());
             email.set(user.email_address.clone());
+            university.set(user.university.clone());
         }
     });
 
@@ -55,6 +57,7 @@ pub fn Profile() -> impl IntoView {
             name: name.get(),
             surname: surname.get(),
             email_address: email.get(),
+            university: university.get(),
         };
 
         update_action.dispatch(request);
@@ -195,7 +198,7 @@ pub fn Profile() -> impl IntoView {
                     </div>
                     <div class="profile-field">
                         <label class="profile-label" for="profile-university">"University"</label>
-                        <input id="profile-university" class="input" type="text" value="Stellenbosch University" disabled autocomplete="organization"/>
+                        <input id="profile-university" class="input" type="text" bind:value=university autocomplete="organization"/>
                     </div>
                 </div>
             </section>
