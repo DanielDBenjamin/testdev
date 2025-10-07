@@ -19,7 +19,7 @@ COPY . .
 # Build
 RUN chmod +x build.sh && ./build.sh
 
-# Runtime stage (same as before)
+# Runtime stage
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
@@ -29,11 +29,16 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# Copy built artifacts
 COPY --from=builder /app/clock-it /app/clock-it
 COPY --from=builder /app/target/site /app/target/site
 COPY --from=builder /app/start.sh /app/start.sh
+COPY --from=builder /app/Cargo.toml /app/Cargo.toml
 
+# Make executable
 RUN chmod +x /app/clock-it /app/start.sh
+
+# Create directory for SQLite database
 RUN mkdir -p /app/data
 
 EXPOSE 3000
