@@ -1,4 +1,5 @@
-use crate::user_context::get_current_user;
+use crate::user_context::{get_current_user, set_current_user};
+use crate::routes::profile_functions::{update_profile, UpdateProfileRequest};
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
 use urlencoding::encode;
@@ -24,16 +25,19 @@ pub fn StudentEditProfilePage() -> impl IntoView {
     let current_user = get_current_user();
 
     let student_id = RwSignal::new(String::new());
+    let user_id = RwSignal::new(0i64);
     let email = RwSignal::new(String::new());
     let first_name = RwSignal::new(String::new());
     let last_name = RwSignal::new(String::new());
     let role_label = RwSignal::new(String::from("Student"));
     let avatar_src = RwSignal::new(String::new());
-    let password = RwSignal::new(String::new());
+    let message = RwSignal::new(String::new());
+    let success = RwSignal::new(false);
 
     Effect::new({
         let current_user = current_user.clone();
         let student_id = student_id.clone();
+        let user_id = user_id.clone();
         let email = email.clone();
         let first_name = first_name.clone();
         let last_name = last_name.clone();
@@ -41,6 +45,7 @@ pub fn StudentEditProfilePage() -> impl IntoView {
         let avatar_src = avatar_src.clone();
         move |_| {
             if let Some(user) = current_user.get() {
+                user_id.set(user.user_id);
                 student_id.set(format!("STU-{0:06}", user.user_id));
                 email.set(user.email_address.clone());
                 first_name.set(user.name.clone());
@@ -52,9 +57,14 @@ pub fn StudentEditProfilePage() -> impl IntoView {
                     "https://ui-avatars.com/api/?name={}&background=14b8a6&color=ffffff&format=svg",
                     encoded
                 ));
-                password.set(String::new());
             }
         }
+    });
+
+    // Update profile action
+    let update_action = Action::new(move |request: &UpdateProfileRequest| {
+        let request = request.clone();
+        async move { update_profile(request).await }
     });
 
     let display_name = Signal::derive(move || {
@@ -75,12 +85,76 @@ pub fn StudentEditProfilePage() -> impl IntoView {
         navigate_back("/student/profile", Default::default());
     };
 
-    let navigate_confirm = navigate.clone();
     let handle_confirm = move |_| {
-        // Here you would typically save the form data
-        // For now, we'll just navigate back to the profile page
-        navigate_confirm("/student/profile", Default::default());
+        message.set(String::new());
+        success.set(false);
+
+        // Validation
+        if first_name.get().trim().is_empty() {
+            message.set("First name is required".to_string());
+            success.set(false);
+            return;
+        }
+
+        if last_name.get().trim().is_empty() {
+            message.set("Last name is required".to_string());
+            success.set(false);
+            return;
+        }
+
+        if email.get().trim().is_empty() {
+            message.set("Email is required".to_string());
+            success.set(false);
+            return;
+        }
+
+        let university = match current_user.get() {
+            Some(user) => user.university,
+            None => "Stellenbosch University".to_string(),
+        };
+
+        let request = UpdateProfileRequest {
+            user_id: user_id.get(),
+            name: first_name.get().trim().to_string(),
+            surname: last_name.get().trim().to_string(),
+            email_address: email.get().trim().to_string(),
+            university,
+        };
+
+        update_action.dispatch(request);
     };
+
+    // Handle update response
+    let navigate_success = navigate.clone();
+    Effect::new(move |_| {
+        if let Some(result) = update_action.value().get() {
+            match result {
+                Ok(response) => {
+                    message.set(response.message.clone());
+                    success.set(response.success);
+
+                    if response.success {
+                        // Update the user context with new data
+                        if let Some(updated_user) = response.user {
+                            set_current_user(updated_user);
+                        }
+                        // Redirect after 1 second
+                        let nav = navigate_success.clone();
+                        set_timeout(
+                            move || {
+                                nav("/student/profile", Default::default());
+                            },
+                            std::time::Duration::from_millis(1000),
+                        );
+                    }
+                }
+                Err(e) => {
+                    message.set(format!("Error: {}", e));
+                    success.set(false);
+                }
+            }
+        }
+    });
 
     view! {
         <div class="student-edit-profile-container">
@@ -165,6 +239,7 @@ pub fn StudentEditProfilePage() -> impl IntoView {
                         />
                     </div>
 
+                    {/* Account Type Input */}
                     {/* Password Input */}
                     
 
@@ -218,9 +293,20 @@ pub fn StudentEditProfilePage() -> impl IntoView {
                     </div>
                 </section>
 
+                {/* Message Display */}
+                <Show when=move || !message.get().is_empty()>
+                    <div class=move || if success.get() { "student-edit-message student-edit-message-success" } else { "student-edit-message student-edit-message-error" }>
+                        {move || message.get()}
+                    </div>
+                </Show>
+
                 {/* Confirm Button */}
-                <button class="student-confirm-btn" on:click=handle_confirm>
-                    "Confirm"
+                <button
+                    class="student-confirm-btn"
+                    on:click=handle_confirm
+                    disabled=move || update_action.pending().get()
+                >
+                    {move || if update_action.pending().get() { "Saving..." } else { "Confirm" }}
                 </button>
             </div>
         </div>
