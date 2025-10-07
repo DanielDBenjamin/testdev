@@ -329,7 +329,7 @@ pub fn StudentProfilePage() -> impl IntoView {
 
                 {/* Other Options */}
                 <section class="student-profile-section">
-                    <A href="/student/support" attr:class="student-settings-item">
+                    <A href="/student/support" attr:class="student-settings-item" attr:style="text-decoration: none;">
                         <div class="student-settings-icon student-settings-icon-gray">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>

@@ -25,7 +25,7 @@ pub fn TermsAndConditions() -> impl IntoView {
                     <p class="tagline">"Track your time, manage your life"</p>
                 </div>
 //T&C page 
-               <div class="form" style="max-height: 60vh; overflow-y: auto;">
+               <div class="form" style="max-height: calc(70vh - 120px); overflow-y: auto;">
     <h2 style="text-align: center; margin-bottom: 20px;">"Terms of Service"</h2>
 
     <div style="padding: 20px; line-height: 1.8;">

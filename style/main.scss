@@ -1280,14 +1280,26 @@ body {
 }
 
 .input-group { position: relative; }
-.input-group .input { padding-right: 40px; }
+.input-group .input { padding-right: 44px; }
 .input-icon { 
   position: absolute; 
-  right: 10px; 
+  right: 14px; 
   top: 50%; 
   transform: translateY(-50%); 
   color: var(--muted); 
-  display: inline-flex; 
+  display: flex; 
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.input-icon svg {
+  width: 18px;
+  height: 18px;
+  opacity: 1;
 }
 
 .password-toggle {
@@ -1365,21 +1377,30 @@ body {
    AUTH PAGES
    ============================================ */
 .auth-layout {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg);
+  background: transparent;
+  padding: 20px;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .auth-card {
-  width: 520px;
+  width: 100%;
+  max-width: 520px;
   background: var(--surface);
   border: 1px solid var(--sidebar-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 20px;
   text-align: left;
+  margin: auto;
 }
 
 .auth-card p {
@@ -1397,7 +1418,7 @@ body {
 
 .segmented { 
   display: grid; 
-  grid-template-columns: repeat(3, 1fr); 
+  grid-template-columns: repeat(2, 1fr); 
   gap: 8px; 
   background: var(--surface-muted); 
   padding: 6px; 
@@ -1424,6 +1445,226 @@ body {
 }
 
 .small { font-size: 12px; }
+
+/* Auth page responsive design */
+@media (min-width: 769px) {
+  /* Desktop: Perfect centering, no scroll */
+  .auth-layout {
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Tablet: Single scroll area */
+  .auth-layout {
+    position: static;
+    height: auto;
+    min-height: 100vh;
+    align-items: flex-start;
+    padding: 5vh 12px 20px;
+    overflow: visible;
+    background: transparent;
+  }
+  
+  .auth-card {
+    padding: 16px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xs);
+    max-height: none;
+    overflow: visible;
+  }
+  
+  .brand-logo {
+    font-size: 32px;
+  }
+  
+  /* Input adjustments for tablets */
+  .input {
+    min-height: 42px;
+  }
+}
+
+
+@media (max-width: 480px) {
+  /* Mobile: Single scroll area */
+  .auth-layout {
+    position: static;
+    height: auto;
+    min-height: 100vh;
+    align-items: flex-start;
+    padding: 2vh 8px 4vh;
+    overflow: visible;
+    background: transparent;
+  }
+  
+  .auth-card {
+    padding: 16px;
+    border: 1px solid var(--sidebar-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    background: var(--surface);
+    max-height: none;
+    overflow: visible;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    /* Ensure all content stays within the card */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  
+  .segmented {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+  
+  .brand-logo-img {
+    width: 120px !important;
+    height: auto !important;
+  }
+  
+  .tagline {
+    font-size: 12px;
+    margin: 4px 0 12px;
+  }
+  
+  /* Fix input icons on mobile */
+  .input-group .input {
+    padding-right: 44px;
+  }
+  
+  .input-icon {
+    right: 16px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .input-icon svg {
+    width: 16px;
+    height: 16px;
+    opacity: 1;
+    color: var(--muted);
+  }
+  
+  /* Ensure input fields have enough height */
+  .input {
+    min-height: 44px;
+    padding: 10px 44px 10px 12px;
+  }
+  
+  /* Ensure register form is fully accessible */
+  .segmented {
+    margin-bottom: 12px;
+  }
+  
+  .row-2 {
+    gap: 8px;
+  }
+  
+  .btn {
+    margin-top: 16px;
+    margin-bottom: 8px;
+  }
+}
+
+/* Extra small iPhone screens (iPhone SE, etc.) */
+@media (max-width: 375px) {
+  .auth-layout {
+    padding: 1vh 4px 2vh;
+  }
+  
+  .auth-card {
+    padding: 12px;
+    margin: 0;
+  }
+  
+  .brand-logo-img {
+    width: 100px !important;
+  }
+  
+  .tagline {
+    font-size: 11px;
+    margin: 2px 0 8px;
+  }
+  
+  .input {
+    min-height: 40px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .btn {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  
+  .segmented .option {
+    padding: 8px 4px;
+    font-size: 14px;
+  }
+  
+  /* Ensure sign-in link is contained within the card */
+  .auth-card .form p.muted {
+    margin-top: 8px !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 8px;
+  }
+}
+
+/* Extra small phones */
+@media (max-height: 700px) and (max-width: 480px) {
+  .auth-layout {
+    padding: 1vh 4px 6vh;
+    background: transparent;
+  }
+  
+  .auth-card {
+    padding: 6px;
+  }
+  
+  .brand-logo-img {
+    width: 100px !important;
+  }
+  
+  .segmented {
+    margin-bottom: 8px;
+  }
+  
+  .form {
+    margin-bottom: 8px;
+  }
+}
+
+/* Terms page specific responsive adjustments */
+@media (max-width: 768px) {
+  .auth-card .form {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-card .form {
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  
+  .auth-card .form > div {
+    padding: 0 !important;
+  }
+  
+  /* Ensure sign-in link stays within card */
+  .auth-card .form p {
+    margin-bottom: 0 !important;
+  }
+}
 
 /* ============================================
    PROFILE PAGE
@@ -2507,5 +2748,496 @@ body {
 
   .pro-tip-icon {
     font-size: 1.25rem;
+  }
+}
+
+/* ============================================
+   STUDENT ATTENDANCE POPUP NOTIFICATIONS
+   ============================================ */
+
+/* Overlay that covers the entire screen */
+.student-attendance-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Main popup container */
+.student-attendance-popup {
+  background: white;
+  border-radius: 20px;
+  padding: 32px 24px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.4s ease-out;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Icon container */
+.student-attendance-icon {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Success styling */
+.student-attendance-popup-success .student-attendance-icon {
+  color: #10b981;
+}
+
+.student-attendance-popup-success .student-attendance-title {
+  color: #065f46;
+}
+
+/* Error styling */
+.student-attendance-popup-error .student-attendance-icon {
+  color: #ef4444;
+}
+
+.student-attendance-popup-error .student-attendance-title {
+  color: #991b1b;
+}
+
+/* Title styling */
+.student-attendance-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+/* Message styling */
+.student-attendance-message {
+  font-size: 1rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .student-attendance-popup {
+    margin: 20px;
+    padding: 28px 20px;
+  }
+  
+  .student-attendance-title {
+    font-size: 1.25rem;
+  }
+  
+  .student-attendance-message {
+    font-size: 0.9rem;
+  }
+  
+  .student-attendance-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* ============================================
+   STUDENT HEADER (STICKY TOP BAR)
+   ============================================ */
+
+/* Main header container - fixed to top */
+.student-home-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  z-index: 999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  /* Safe area support for phones with notches */
+  padding-top: calc(12px + env(safe-area-inset-top));
+  /* Minimum height for accessibility */
+  min-height: 64px;
+}
+
+/* Logo section */
+.student-header-logo {
+  display: flex;
+  align-items: center;
+}
+
+.student-brand-logo-img {
+  height: 36px;
+  width: auto;
+  max-width: 140px;
+}
+
+/* Actions section (profile button) */
+.student-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Profile picture button */
+.student-profile-picture {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.student-profile-picture:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.2);
+  transform: scale(1.05);
+}
+
+.student-profile-picture:active {
+  transform: scale(0.95);
+}
+
+.student-profile-picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* Statistics header styling */
+.student-stats-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  z-index: 999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding-top: calc(12px + env(safe-area-inset-top));
+  min-height: 64px;
+}
+
+.student-back-button {
+  background: none;
+  border: none;
+  color: #374151;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-back-button:hover {
+  background-color: #f3f4f6;
+  color: var(--accent);
+}
+
+.student-back-button:active {
+  transform: scale(0.95);
+}
+
+.student-stats-header-title {
+  flex: 1;
+  text-align: center;
+  margin: 0 16px;
+}
+
+.student-stats-header-title h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.student-stats-header-title p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 2px 0 0 0;
+}
+
+/* Content offsets for sticky headers */
+.student-home-container {
+  padding-top: calc(76px + env(safe-area-inset-top));
+}
+
+.student-stats-container {
+  padding-top: calc(76px + env(safe-area-inset-top));
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .student-home-header,
+  .student-stats-header {
+    padding: 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top));
+    min-height: 60px;
+  }
+  
+  .student-brand-logo-img {
+    height: 32px;
+    max-width: 120px;
+  }
+  
+  .student-profile-picture {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .student-stats-header-title h1 {
+    font-size: 1.125rem;
+  }
+  
+  .student-stats-header-title p {
+    font-size: 0.8rem;
+  }
+  
+  .student-home-container,
+  .student-stats-container {
+    padding-top: calc(70px + env(safe-area-inset-top));
+  }
+}
+
+/* Large screen adjustments */
+@media (min-width: 768px) {
+  .student-home-header,
+  .student-stats-header {
+    max-width: 400px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 0 0 16px 16px;
+    border-left: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+  }
+}
+
+/* ============================================
+   STUDENT BOTTOM NAVIGATION
+   ============================================ */
+
+/* Main navigation container - fixed to bottom */
+.student-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 8px 16px;
+  z-index: 1000;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
+  /* Safe area support for phones with notches/home indicators */
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  /* Minimum height to ensure touch targets are accessible */
+  min-height: 72px;
+}
+
+/* Individual navigation items */
+.student-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  /* Ensure touch targets are large enough for mobile */
+  min-width: 48px;
+  min-height: 48px;
+  position: relative;
+}
+
+/* Active state styling */
+.student-nav-item-active {
+  color: var(--accent) !important;
+  background-color: rgba(20, 184, 166, 0.1);
+}
+
+/* Hover/press states */
+.student-nav-item:hover:not(.student-nav-item-scan) {
+  color: #374151;
+  background-color: #f3f4f6;
+}
+
+.student-nav-item:active {
+  transform: scale(0.95);
+}
+
+/* Special styling for the scan button (center) */
+.student-nav-item-scan {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent) 0%, #0d9488 100%);
+  border-radius: 20px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+  transform: translateY(-8px); /* Slightly elevated */
+}
+
+.student-nav-item-scan:hover {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  box-shadow: 0 6px 16px rgba(20, 184, 166, 0.4);
+}
+
+.student-nav-item-scan:active {
+  transform: translateY(-6px) scale(0.95);
+}
+
+/* Scan button inner container */
+.student-scan-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Navigation labels */
+.student-nav-label {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+  line-height: 1;
+}
+
+/* Hide labels on very small screens */
+@media (max-width: 360px) {
+  .student-nav-label {
+    display: none;
+  }
+  
+  .student-nav-item {
+    min-height: 40px;
+  }
+  
+  .student-bottom-nav {
+    min-height: 60px;
+    padding: 6px 12px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Large screen adjustments */
+@media (min-width: 768px) {
+  .student-bottom-nav {
+    max-width: 400px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 20px 20px 0 0;
+    border-left: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+  }
+}
+
+/* Ensure content doesn't get hidden behind sticky bars */
+.student-statistics-container {
+  padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  min-height: 100vh;
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .student-bottom-nav {
+    /* Extra padding for iOS home indicator */
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Prevent content from jumping when bottom nav loads */
+body {
+  /* Ensure viewport units work correctly on mobile */
+  height: 100vh;
+  height: -webkit-fill-available;
+}
+
+html {
+  height: -webkit-fill-available;
+}
+
+/* Additional mobile viewport fixes */
+@media screen and (max-height: 700px) {
+  .student-bottom-nav {
+    /* Slightly smaller on very short screens */
+    min-height: 64px;
+    padding: 6px 16px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+  }
+  
+  .student-home-container,
+  .student-statistics-container {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Landscape orientation adjustments */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .student-nav-label {
+    display: none;
+  }
+  
+  .student-bottom-nav {
+    min-height: 56px;
+    padding: 4px 16px;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+  }
+  
+  .student-nav-item {
+    min-height: 40px;
+    padding: 6px 10px;
+  }
+  
+  .student-nav-item-scan {
+    padding: 8px 12px;
+    transform: translateY(-4px);
   }
 }

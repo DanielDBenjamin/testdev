@@ -39,7 +39,7 @@ pub fn App() -> impl IntoView {
     crate::user_context::init_user_context();
 
     view! {
-        <Stylesheet id="leptos" href="/pkg/clock-it.css"/>
+        <Stylesheet id="leptos" href="/pkg/clock-it.css?v=20251007001"/>
         <Title text="Clock-It"/>
         <Router>
             <AppShell/>
