@@ -1,19 +1,25 @@
 #!/bin/bash
 
-# Set up the database directory
-mkdir -p /app/data
+# Detect if we're running locally or in Railway
+if [ -d "/app" ]; then
+    # Railway environment
+    DATA_DIR="/app/data"
+    BINARY="./clock-it"
+else
+    # Local environment
+    DATA_DIR="./data"
+    BINARY="./target/release/clock-it"
+fi
 
-# Check if database exists, if not create it and run migrations
-if [ ! -f "/app/data/clock_it.db" ]; then
+# Set up the database directory
+mkdir -p "$DATA_DIR"
+
+# Check if database exists, if not create it
+if [ ! -f "$DATA_DIR/clock_it.db" ]; then
     echo "Database not found, creating new database..."
-    
-    # Create the database file
-    touch /app/data/clock_it.db
-    
-    # Run migrations (you'll need to install sqlx-cli for this)
-    # For now, we'll just create the database file
-    echo "Database created at /app/data/clock_it.db"
+    touch "$DATA_DIR/clock_it.db"
+    echo "Database created at $DATA_DIR/clock_it.db"
 fi
 
 # Start the application
-exec ./clock-it
+exec "$BINARY"

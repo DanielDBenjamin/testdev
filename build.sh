@@ -1,16 +1,30 @@
 #!/bin/bash
 set -e
 
-echo "Building Rust application for Linux..."
-cargo build --release --target x86_64-unknown-linux-musl
+echo "Building backend..."
+cargo build --release --bin clock-it --no-default-features --features ssr
 
-echo "Building WASM components..."
-cargo build --release --target wasm32-unknown-unknown
+echo "Building frontend WASM..."
+cargo build --lib --target wasm32-unknown-unknown --no-default-features --features hydrate --profile wasm-release --target-dir ./target/front
 
-echo "Optimizing WASM with bulk memory support..."
-find target/wasm32-unknown-unknown/release -name "*.wasm" -type f | while read wasm_file; do
-    echo "Optimizing $wasm_file"
-    wasm-opt --enable-bulk-memory -Oz "$wasm_file" -o "$wasm_file"
-done
+echo "Installing wasm-bindgen-cli..."
+cargo install wasm-bindgen-cli --version 0.2.103 || true
 
-echo "Build complete!"
+echo "Running wasm-bindgen..."
+wasm-bindgen --target web \
+    --no-typescript \
+    --out-dir target/site/pkg \
+    --out-name clock-it \
+    target/front/wasm32-unknown-unknown/wasm-release/clock_it.wasm
+
+echo "Optimizing WASM with all required features..."
+wasm-opt --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals -Oz \
+    target/site/pkg/clock-it_bg.wasm \
+    -o target/site/pkg/clock-it_bg.wasm
+
+echo "Copying assets..."
+mkdir -p target/site
+cp -r style target/site/ 2>/dev/null || true
+cp -r public target/site/ 2>/dev/null || true
+
+echo "✅ Build complete!"
